@@ -40,6 +40,14 @@ function contrast(hex){hex=hex.replace('#','');const r=parseInt(hex.slice(0,2),1
 function fmtKickoff(iso){try{const d=new Date(iso);return d.toLocaleString([], {weekday:'short', hour:'numeric', minute:'2-digit'});}catch{ return ''; }}
 function section(title, inner){return `<div class="section"><h2>${title}</h2>${inner || '<div class="empty">No games in this section.</div>'}</div>`}
 
+// pick the best ESPN logo (prefer 'scoreboard' rel, then 'full', else first)
+function pickLogo(logos){
+  if(!Array.isArray(logos)) return null;
+  const byRel = (rel) => logos.find(l => Array.isArray(l.rel) && l.rel.includes(rel));
+  const best = byRel('scoreboard') || byRel('full') || logos[0];
+  return best && best.href ? best.href : null;
+}
+
 function parseGames(data){
   const games=[];
   for(const ev of (data.events||[])){
@@ -60,7 +68,7 @@ function parseGames(data){
       const info=c.team||{};
       const abbr=info.abbreviation||"";
       const color = info.color ? ("#"+info.color) : (TEAM_COLORS[abbr]||"#333");
-      const logo = (info.logos && info.logos[0] && info.logos[0].href) || null;
+      const logo = pickLogo(info.logos);
       const score = (c.score!=null && /^\d+$/.test(String(c.score))) ? Number(c.score) : null;
       t[c.homeAway==="home"?"home":"away"] = { abbr, color, logo, score };
     }
@@ -84,8 +92,8 @@ function renderCards(arr){
     const a=g.away, h=g.home;
     const aC=a.color, hC=h.color, aT=contrast(aC), hT=contrast(hC);
     const as=(a.score==null?'-':a.score), hs=(h.score==null?'-':h.score);
-    const aLogo = a.logo ? `<img src="${a.logo}" alt="${a.abbr} logo">` : `<div style="font-weight:800;font-size:42px">${a.abbr}</div>`;
-    const hLogo = h.logo ? `<img src="${h.logo}" alt="${h.abbr} logo">` : `<div style="font-weight:800;font-size:42px">${h.abbr}</div>`;
+    const aLogo = a.logo ? `<img referrerpolicy="no-referrer" crossorigin="anonymous" src="${a.logo}" alt="${a.abbr} logo">` : `<div style="font-weight:800;font-size:42px">${a.abbr}</div>`;
+    const hLogo = h.logo ? `<img referrerpolicy="no-referrer" crossorigin="anonymous" src="${h.logo}" alt="${h.abbr} logo">` : `<div style="font-weight:800;font-size:42px">${h.abbr}</div>`;
     const meta = (g.state==='pre') ? (g.statusText.includes('ET') ? g.statusText : `${g.kickoff} • ${g.statusText}`) : g.metaBits.join(' • ');
     return `
     <div class="card">
@@ -108,7 +116,6 @@ async function load(){
     const json = await res.json();
     const games = parseGames(json);
 
-    // Group & sort
     const inProg = games.filter(g=>g.state==='in')
                         .sort((a,b)=> (a.qclock? -1:0) - (b.qclock? -1:0));
     const upcoming = games.filter(g=>g.state==='pre')
@@ -117,9 +124,9 @@ async function load(){
                            .sort((a,b)=> new Date(b.date)-new Date(a.date));
 
     const sections = [
-      section('In Progress', inProg.length ? renderCards(inProg) : ''),
-      section('Upcoming', upcoming.length ? renderCards(upcoming) : ''),
-      section('Completed', completed.length ? renderCards(completed) : '')
+      `<div class="section"><h2>In Progress</h2>${inProg.length ? renderCards(inProg) : '<div class="empty">No games in this section.</div>'}</div>`,
+      `<div class="section"><h2>Upcoming</h2>${upcoming.length ? renderCards(upcoming) : '<div class="empty">No games in this section.</div>'}</div>`,
+      `<div class="section"><h2>Completed</h2>${completed.length ? renderCards(completed) : '<div class="empty">No games in this section.</div>'}</div>`
     ].join('');
 
     root.innerHTML = sections;
