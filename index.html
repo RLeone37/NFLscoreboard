@@ -1,0 +1,92 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>NFL Scoreboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  html,body{margin:0;padding:0;background:#000;color:#fff;font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:0}
+  .card{position:relative;height:140px;overflow:hidden;background:#111}
+  .half{position:absolute;top:0;bottom:0;width:50%}
+  .half.left{left:0}.half.right{right:0}
+  .half .logo{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;opacity:.95}
+  .half .logo img{max-height:80px;max-width:80px}
+  .overlay{position:absolute;left:50%;top:0;transform:translateX(-50%);height:100%;width:62%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;background:rgba(0,0,0,.36)}
+  .match{font-weight:800;font-size:18px;margin:0}
+  .score{font-size:20px;font-weight:800;margin:2px 0 2px}
+  .meta{font-size:12px;opacity:.95;margin:0}
+  .bar{display:flex;align-items:center;gap:10px;padding:10px 12px;background:#000;border-bottom:1px solid #111;position:sticky;top:0;z-index:5}
+  .bar .dot{width:10px;height:10px;border-radius:50%;background:#0f0;box-shadow:0 0 8px #0f0}
+  .bar .time{opacity:.8;font-size:12px}
+</style>
+<div class="bar"><div class="dot"></div><div>Live NFL Scoreboard</div><div class="time" id="time"></div></div>
+<div id="app" class="grid"></div>
+<script>
+const API = "https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard";
+const TEAM_COLORS = {"ARI":"#97233F","ATL":"#A71930","BAL":"#241773","BUF":"#00338D","CAR":"#0085CA","CHI":"#0B162A","CIN":"#FB4F14","CLE":"#311D00","DAL":"#041E42","DEN":"#FB4F14","DET":"#0076B6","GB":"#203731","HOU":"#03202F","IND":"#002C5F","JAX":"#006778","KC":"#E31837","LAC":"#0080C6","LAR":"#003594","LV":"#000000","MIA":"#008E97","MIN":"#4F2683","NE":"#002244","NO":"#D3BC8D","NYG":"#0B2265","NYJ":"#125740","PHI":"#004C54","PIT":"#101820","SF":"#AA0000","SEA":"#002244","TB":"#D50A0A","TEN":"#0C2340","WSH":"#5A1414"};
+const app = document.getElementById('app');
+const timeEl = document.getElementById('time');
+
+function contrast(hex){hex=hex.replace('#','');const r=parseInt(hex.slice(0,2),16),g=parseInt(hex.slice(2,4),16),b=parseInt(hex.slice(4,6),16);return (r+g+b)>382?'#000':'#fff'}
+function fmtTime(d){return d.toLocaleString([], {hour:'2-digit', minute:'2-digit', second:'2-digit'})}
+
+async function load() {
+  try {
+    const res = await fetch(API, {cache:"no-store"});
+    const data = await res.json();
+    const cards = [];
+    for (const ev of (data.events||[])) {
+      const comp = (ev.competitions||[{}])[0];
+      const status = (comp.status||{}).type || {};
+      const statustxt = status.shortDetail || status.description || "—";
+      const period = (comp.status||{}).period;
+      const clock  = (comp.status||{}).displayClock;
+      const qclock = period ? ("Q"+period+(clock?(" "+clock):"")) : null;
+      const sit    = comp.situation || {};
+      const dd     = sit.shortDownDistanceText;
+      const poss   = sit.possession;
+      const meta   = [statustxt, qclock, dd, (poss?("POSS: "+poss):null)].filter(Boolean).join(" • ");
+
+      const t = {};
+      for (const team of (comp.competitors||[])) {
+        const info = team.team||{};
+        const abbr = info.abbreviation || "";
+        const color = (info.color?("#"+info.color):(TEAM_COLORS[abbr]||"#333333"));
+        const logo = (info.logos&&info.logos[0]&&info.logos[0].href)||null;
+        const score = (team.score!=null && /^\d+$/.test(String(team.score))) ? team.score : "-";
+        t[team.homeAway==="home"?"home":"away"] = {abbr, color, logo, score, name:info.shortDisplayName||info.displayName||abbr};
+      }
+      cards.push({meta, home:t.home, away:t.away});
+    }
+    // choose slate
+    const live = cards.filter(c=>/IN PROGRESS|HALFTIME|OVERTIME|DELAY/i.test(c.meta));
+    const upcoming = cards.filter(c=>/\bET\b|Scheduled/i.test(c.meta));
+    const finals = cards.filter(c=>/Final/i.test(c.meta));
+    const slate = live.length?live:(upcoming.length?upcoming:(finals.length?finals:cards));
+
+    app.innerHTML = slate.map(c=>{
+      const as = c.away.score, hs = c.home.score;
+      const aC = c.away.color, hC = c.home.color;
+      const aT = contrast(aC),  hT = contrast(hC);
+      const aLogo = c.away.logo ? `<img src="${c.away.logo}" alt="${c.away.abbr} logo">` : `<div style="font-weight:800;font-size:42px">${c.away.abbr}</div>`;
+      const hLogo = c.home.logo ? `<img src="${c.home.logo}" alt="${c.home.abbr} logo">` : `<div style="font-weight:800;font-size:42px">${c.home.abbr}</div>`;
+      return `
+      <div class="card">
+        <div class="half left"  style="background:${aC};color:${aT}"><div class="logo">${aLogo}</div></div>
+        <div class="half right" style="background:${hC};color:${hT}"><div class="logo">${hLogo}</div></div>
+        <div class="overlay">
+          <div class="match">${c.away.abbr} @ ${c.home.abbr}</div>
+          <div class="score">${as} — ${hs}</div>
+          <div class="meta">${c.meta}</div>
+        </div>
+      </div>`;
+    }).join('');
+
+    timeEl.textContent = "Updated " + fmtTime(new Date());
+  } catch (e) {
+    console.error(e);
+    timeEl.textContent = "Update failed";
+  }
+}
+load();
+setInterval(load, 30000);
+</script>
