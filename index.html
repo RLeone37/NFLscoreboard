@@ -101,44 +101,57 @@ function gameCard(g){
   const possAway=(g.possessionId && String(g.possessionId)===String(a.id));
   const possHome=(g.possessionId && String(g.possessionId)===String(h.id));
 
+  // Meta row rules
   let metaLeft="", metaRight="";
   if(g.state==='in'){
     metaLeft = badge(g.qclock || "LIVE");
     if(g.down || g.togo) metaLeft += " " + badge(`${g.down||"—"} & ${g.togo||"—"}`);
-  }else if(g.state==='pre'){
-    metaLeft = badge(g.kickoff || "TBD");
-    metaRight = `<span class="tiny">${g.statusText}</span>`;
-  }else{
+  } else if(g.state==='pre'){
+    // Upcoming: show nothing (logos only)
+    metaLeft = "";
+    metaRight = "";
+  } else {
     metaLeft = badge(g.statusText || "Final");
   }
 
-  const aScore = a.score==null? "-" : a.score;
-  const hScore = h.score==null? "-" : h.score;
+  // Scores/timeouts hidden for upcoming
+  const leftDetail = g.state==='pre' ? '' : `
+      <div class="score">${a.score==null?'-':a.score}</div>
+      <div class="tiny">TOs</div>
+      ${timeoutsDots(a.timeouts)}
+  `;
+  const rightDetail = g.state==='pre' ? '' : `
+      <div class="score">${h.score==null?'-':h.score}</div>
+      <div class="tiny">TOs</div>
+      ${timeoutsDots(h.timeouts)}
+  `;
+
+  // Possession indicator only when live
+  const possBadgeAway = (g.state==='in' && possAway) ? `<span class="poss">POSS</span>` : ``;
+  const possBadgeHome = (g.state==='in' && possHome) ? `<span class="poss">POSS</span>` : ``;
 
   return `
   <div class="card">
     <div class="side" style="background:${a.color};color:${aTxt}">
       <div class="logoWrap">
         ${logoImg(a.abbr, a.espnLogo)}
-        ${possAway ? `<span class="poss">POSS</span>` : ``}
+        ${possBadgeAway}
       </div>
-      <div class="score">${aScore}</div>
-      <div class="tiny">TOs</div>
-      ${timeoutsDots(a.timeouts)}
+      ${leftDetail}
     </div>
     <div class="side" style="background:${h.color};color:${hTxt}">
       <div class="logoWrap">
         ${logoImg(h.abbr, h.espnLogo)}
-        ${possHome ? `<span class="poss">POSS</span>` : ``}
+        ${possBadgeHome}
       </div>
-      <div class="score">${hScore}</div>
-      <div class="tiny">TOs</div>
-      ${timeoutsDots(h.timeouts)}
+      ${rightDetail}
     </div>
-    <div class="row">
-      <div class="meta">${metaLeft}</div>
-      <div class="meta">${metaRight}</div>
-    </div>
+    ${g.state==='pre' ? '' : `
+      <div class="row">
+        <div class="meta">${metaLeft}</div>
+        <div class="meta">${metaRight}</div>
+      </div>
+    `}
   </div>`;
 }
 
