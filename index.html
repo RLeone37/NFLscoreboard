@@ -38,142 +38,111 @@
 <div id="root"></div>
 
 <script>
-const API = "https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard";
-const LOGO_DIR = "./logos/";
-const LOGO_EXTS = [".png",".PNG",".svg",".SVG",".webp",".WEBP",".jpg",".JPG",".jpeg",".JPEG"];
-const TEAM_COLORS = {"ARI":"#97233F","ATL":"#A71930","BAL":"#241773","BUF":"#00338D","CAR":"#0085CA","CHI":"#0B162A","CIN":"#FB4F14","CLE":"#311D00","DAL":"#041E42","DEN":"#FB4F14","DET":"#0076B6","GB":"#203731","HOU":"#03202F","IND":"#002C5F","JAX":"#006778","KC":"#E31837","LAC":"#0080C6","LAR":"#003594","LV":"#000000","MIA":"#008E97","MIN":"#4F2683","NE":"#002244","NO":"#D3BC8D","NYG":"#0B2265","NYJ":"#125740","PHI":"#004C54","PIT":"#101820","SF":"#AA0000","SEA":"#002244","TB":"#D50A0A","TEN":"#0C2340","WSH":"#5A1414"};
+const API="https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard";
+const LOGO_DIR="./logos/";
+const LOGO_EXTS=[".png",".PNG",".svg",".SVG",".webp",".WEBP",".jpg",".JPG",".jpeg",".JPEG"];
+const TEAM_COLORS={"ARI":"#97233F","ATL":"#A71930","BAL":"#241773","BUF":"#00338D","CAR":"#0085CA","CHI":"#0B162A","CIN":"#FB4F14","CLE":"#311D00","DAL":"#041E42","DEN":"#FB4F14","DET":"#0076B6","GB":"#203731","HOU":"#03202F","IND":"#002C5F","JAX":"#006778","KC":"#E31837","LAC":"#0080C6","LAR":"#003594","LV":"#000000","MIA":"#008E97","MIN":"#4F2683","NE":"#002244","NO":"#D3BC8D","NYG":"#0B2265","NYJ":"#125740","PHI":"#004C54","PIT":"#101820","SF":"#AA0000","SEA":"#002244","TB":"#D50A0A","TEN":"#0C2340","WSH":"#5A1414"};
 
 function contrast(hex){hex=String(hex||"#000").replace("#","");const r=parseInt(hex.slice(0,2),16)||0,g=parseInt(hex.slice(2,4),16)||0,b=parseInt(hex.slice(4,6),16)||0;return (r+g+b)>382?'#000':'#fff'}
-function fmtKickoff(iso){try{const d=new Date(iso);return d.toLocaleString([], {weekday:'short', hour:'numeric', minute:'2-digit'});}catch{return ""}}
 function badge(txt){return `<span class="chip">${txt}</span>`}
 function timeoutsDots(n=0){n=Number(n)||0;return `<div class="tos">${[0,1,2].map(i=>`<span class="toDot ${i<n?'on':''}"></span>`).join('')}</div>`}
-function pickLogo(logos){if(!Array.isArray(logos))return null;const byRel=(rel)=>logos.find(l=>Array.isArray(l.rel)&&l.rel.includes(rel));const best=byRel('scoreboard')||byRel('full')||logos[0];return best&&best.href?best.href:null}
+function pickLogo(logos){if(!Array.isArray(logos))return null;const byRel=r=>logos.find(l=>Array.isArray(l.rel)&&l.rel.includes(r));const best=byRel('scoreboard')||byRel('full')||logos[0];return best&&best.href?best.href:null}
 function logoImg(abbr,espnUrl){const key=(abbr||"").toUpperCase();const candidates=[...LOGO_EXTS.map(ext=>`${LOGO_DIR}${key}${ext}`),espnUrl].filter(Boolean);if(!candidates.length)return"";const first=candidates[0].replace(/"/g,'&quot;');let onerr="";for(let i=1;i<candidates.length;i++){const next=candidates[i].replace(/"/g,'&quot;');onerr+=`this.onerror=null;this.src="${next}";`;if(i<candidates.length-1){onerr=`if(this.src.indexOf('${candidates[i-1]}')!==-1){${onerr}}else{this.onerror=null;}`;}}return `<img src="${first}" alt="${key} logo" referrerpolicy="no-referrer" crossorigin="anonymous"${onerr?` onerror='${onerr}'`:''}>`}
-function parseDownAndToGo(shortText){if(!shortText)return{down:null,togo:null};const m=shortText.match(/(1st|2nd|3rd|4th)\s*&\s*(\d+|Goal)/i);return{down:m?m[1].toUpperCase():null,togo:m?m[2]:null}}
+function parseDownAndToGo(t){if(!t)return{down:null,togo:null};const m=t.match(/(1st|2nd|3rd|4th)\s*&\s*(\d+|Goal)/i);return{down:m?m[1].toUpperCase():null,togo:m?m[2]:null}}
 
 function parseGames(data){
   const out=[];
-  for(const ev of (data?.events||[])){
+  for(const ev of(data?.events||[])){
     const comp=(ev.competitions||[{}])[0]||{};
     const st=(comp.status||{}).type||{};
     const state=(st.state||"").toLowerCase();
-    const clock=(comp.status||{}).displayClock || "";
-    const period=(comp.status||{}).period || null;
-    const qclock = period ? `Q${period}${clock?` ${clock}`:''}` : (state==='pre' ? 'PRE' : '');
-    const sit = comp.situation || {};
-    const possTeamId = sit.possession || null;
-    const shortDD = sit.shortDownDistanceText || null;
-    const {down,togo} = parseDownAndToGo(shortDD);
-    const t = {};
-    for(const c of (comp.competitors||[])){
+    const clock=(comp.status||{}).displayClock||"";
+    const period=(comp.status||{}).period||null;
+    const qclock=period?`Q${period}${clock?` ${clock}`:''}`:(state==='pre'?'PRE':'');
+    const sit=comp.situation||{};
+    const possTeamId=sit.possession||null;
+    const shortDD=sit.shortDownDistanceText||null;
+    const {down,togo}=parseDownAndToGo(shortDD);
+    const t={};
+    for(const c of(comp.competitors||[])){
       const team=c.team||{};
       const abbr=team.abbreviation||"";
-      const color = team.color ? ("#"+team.color) : (TEAM_COLORS[abbr]||"#333");
-      const espnLogo = pickLogo(team.logos);
-      const score = (c.score!=null && /^\d+$/.test(String(c.score))) ? Number(c.score) : null;
-      const timeouts = c.timeouts != null ? Number(c.timeouts) : null;
-      const id = team.id || c.id || null;
-      t[c.homeAway==="home"?"home":"away"] = { id, abbr, color, score, timeouts, espnLogo };
+      const color=team.color?("#"+team.color):(TEAM_COLORS[abbr]||"#333");
+      const espnLogo=pickLogo(team.logos);
+      const score=(c.score!=null&&/^\d+$/.test(String(c.score)))?Number(c.score):null;
+      const timeouts=c.timeouts!=null?Number(c.timeouts):null;
+      const id=team.id||c.id||null;
+      t[c.homeAway==="home"?"home":"away"]={id,abbr,color,score,timeouts,espnLogo};
     }
-    out.push({ id: ev.id, date: ev.date, kickoff: fmtKickoff(ev.date), state, qclock, clock, period,
-      statusText: st.shortDetail || st.description || "—", down, togo, possessionId: possTeamId,
-      home: t.home, away: t.away });
+    out.push({id:ev.id,date:ev.date,kickoff:new Date(ev.date),state,qclock,period,down,togo,possessionId:sit.possession,home:t.home,away:t.away});
   }
   return out;
 }
 
 function gameCard(g){
-  const a=g.away, h=g.home;
-  const aTxt=contrast(a.color), hTxt=contrast(h.color);
-  const possAway=(g.possessionId && String(g.possessionId)===String(a.id));
-  const possHome=(g.possessionId && String(g.possessionId)===String(h.id));
+  const a=g.away,h=g.home;
+  const aTxt=contrast(a.color),hTxt=contrast(h.color);
+  const possAway=g.possessionId&&String(g.possessionId)===String(a.id);
+  const possHome=g.possessionId&&String(g.possessionId)===String(h.id);
+  const aScore=a.score??"-",hScore=h.score??"-";
+  const date=g.kickoff;
+  const dateStr=date.toLocaleDateString([], {month:"short",day:"numeric"});
+  const timeStr=date.toLocaleTimeString([], {hour:"numeric",minute:"2-digit"});
 
-  const aScore = a.score==null? "-" : a.score;
-  const hScore = h.score==null? "-" : h.score;
-
-  // ────────────────────────────────
-  // UPCOMING → logos only
-  // COMPLETED → logos + final score
-  // IN-PROGRESS → full info
-  // ────────────────────────────────
-  if(g.state==='pre'){
-    return `
-    <div class="card">
+  if(g.state==="pre"){
+    return `<div class="card">
       <div class="side" style="background:${a.color};color:${aTxt}"><div class="logoWrap">${logoImg(a.abbr,a.espnLogo)}</div></div>
       <div class="side" style="background:${h.color};color:${hTxt}"><div class="logoWrap">${logoImg(h.abbr,h.espnLogo)}</div></div>
+      <div class="row"><div class="meta"><span class="tiny">${dateStr} • ${timeStr}</span></div></div>
     </div>`;
   }
 
-  if(g.state==='post'){
-    return `
-    <div class="card">
+  if(g.state==="post"){
+    return `<div class="card">
       <div class="side" style="background:${a.color};color:${aTxt}">
-        <div class="logoWrap">${logoImg(a.abbr,a.espnLogo)}</div>
-        <div class="score">${aScore}</div>
+        <div class="logoWrap">${logoImg(a.abbr,a.espnLogo)}</div><div class="score">${aScore}</div>
       </div>
       <div class="side" style="background:${h.color};color:${hTxt}">
-        <div class="logoWrap">${logoImg(h.abbr,h.espnLogo)}</div>
-        <div class="score">${hScore}</div>
+        <div class="logoWrap">${logoImg(h.abbr,h.espnLogo)}</div><div class="score">${hScore}</div>
       </div>
+      <div class="row"><div class="meta"><span class="tiny">${date.toLocaleDateString([], {month:"short",day:"numeric",year:"numeric"})}</span></div></div>
     </div>`;
   }
 
-  // IN PROGRESS (unchanged)
-  let metaLeft="", metaRight="";
-  if(g.state==='in'){
-    metaLeft = badge(g.qclock || "LIVE");
-    if(g.down || g.togo) metaLeft += " " + badge(`${g.down||"—"} & ${g.togo||"—"}`);
-  } else {
-    metaLeft = badge(g.statusText || "Final");
-  }
-
-  return `
-  <div class="card">
+  let metaLeft="";
+  if(g.state==="in"){metaLeft=badge(g.qclock||"LIVE");if(g.down||g.togo)metaLeft+=" "+badge(`${g.down||"—"} & ${g.togo||"—"}`);}
+  return `<div class="card">
     <div class="side" style="background:${a.color};color:${aTxt}">
-      <div class="logoWrap">${logoImg(a.abbr,a.espnLogo)}${possAway?`<span class='poss'>POSS</span>`:""}</div>
-      <div class="score">${aScore}</div>
-      <div class="tiny">TOs</div>${timeoutsDots(a.timeouts)}
+      <div class="logoWrap">${logoImg(a.abbr,a.espnLogo)}${possAway?"<span class='poss'>POSS</span>":""}</div>
+      <div class="score">${aScore}</div><div class="tiny">TOs</div>${timeoutsDots(a.timeouts)}
     </div>
     <div class="side" style="background:${h.color};color:${hTxt}">
-      <div class="logoWrap">${logoImg(h.abbr,h.espnLogo)}${possHome?`<span class='poss'>POSS</span>`:""}</div>
-      <div class="score">${hScore}</div>
-      <div class="tiny">TOs</div>${timeoutsDots(h.timeouts)}
+      <div class="logoWrap">${logoImg(h.abbr,h.espnLogo)}${possHome?"<span class='poss'>POSS</span>":""}</div>
+      <div class="score">${hScore}</div><div class="tiny">TOs</div>${timeoutsDots(h.timeouts)}
     </div>
-    <div class="row">
-      <div class="meta">${metaLeft}</div>
-      <div class="meta">${metaRight}</div>
-    </div>
+    <div class="row"><div class="meta">${metaLeft}</div></div>
   </div>`;
 }
 
 function render(games){
-  const root=document.getElementById('root');
-  const inProg=games.filter(g=>g.state==='in');
-  const upcoming=games.filter(g=>g.state==='pre');
-  const completed=games.filter(g=>g.state==='post');
-  const section=(title,arr)=>`
-    <div class="section">
-      <h2>${title}</h2>
-      ${arr.length?`<div class="grid">${arr.map(gameCard).join('')}</div>`:`<div class="empty">No games in this section.</div>`}
-    </div>`;
-  root.innerHTML = section("In Progress",inProg)
-                 + section("Upcoming",upcoming)
-                 + section("Completed",completed);
+  const r=document.getElementById("root");
+  const inP=games.filter(g=>g.state==="in"),up=games.filter(g=>g.state==="pre"),done=games.filter(g=>g.state==="post");
+  const sec=(t,a)=>`<div class="section"><h2>${t}</h2>${a.length?`<div class="grid">${a.map(gameCard).join("")}</div>`:`<div class="empty">No games in this section.</div>`}</div>`;
+  r.innerHTML=sec("In Progress",inP)+sec("Upcoming",up)+sec("Completed",done);
 }
 
 async function load(){
-  const t=document.getElementById('time');
+  const t=document.getElementById("time");
   try{
     const res=await fetch(API,{cache:"no-store"});
-    if(!res.ok)throw new Error("HTTP "+res.status);
-    const json=await res.json();
-    render(parseGames(json));
+    if(!res.ok)throw new Error(res.status);
+    const j=await res.json();render(parseGames(j));
     t.textContent="Updated "+new Date().toLocaleTimeString();
   }catch(e){
     console.error(e);
-    document.getElementById('root').innerHTML='<div class="err">Failed to load games. Open console for details.</div>';
+    document.getElementById("root").innerHTML='<div class="err">Failed to load games.</div>';
     t.textContent="Update failed";
   }
 }
-window.addEventListener('load',()=>{load();setInterval(load,30000);});
+window.addEventListener("load",()=>{load();setInterval(load,30000);});
 </script>
