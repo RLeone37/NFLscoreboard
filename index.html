@@ -39,8 +39,14 @@
 
 <script>
 const API = "https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard";
-const LOGO_DIR = "logos/";                   // your folder
-const LOGO_EXTS = [".png",".svg",".webp"];   // try in this order
+const LOGO_DIR = "./logos/";
+const LOGO_EXTS = [
+  ".png",".PNG",
+  ".svg",".SVG",
+  ".webp",".WEBP",
+  ".jpg",".JPG",
+  ".jpeg",".JPEG"
+];
 const TEAM_COLORS = {"ARI":"#97233F","ATL":"#A71930","BAL":"#241773","BUF":"#00338D","CAR":"#0085CA","CHI":"#0B162A","CIN":"#FB4F14","CLE":"#311D00","DAL":"#041E42","DEN":"#FB4F14","DET":"#0076B6","GB":"#203731","HOU":"#03202F","IND":"#002C5F","JAX":"#006778","KC":"#E31837","LAC":"#0080C6","LAR":"#003594","LV":"#000000","MIA":"#008E97","MIN":"#4F2683","NE":"#002244","NO":"#D3BC8D","NYG":"#0B2265","NYJ":"#125740","PHI":"#004C54","PIT":"#101820","SF":"#AA0000","SEA":"#002244","TB":"#D50A0A","TEN":"#0C2340","WSH":"#5A1414"};
 
 function contrast(hex){hex=String(hex||"#000").replace("#","");const r=parseInt(hex.slice(0,2),16)||0,g=parseInt(hex.slice(2,4),16)||0,b=parseInt(hex.slice(4,6),16)||0;return (r+g+b)>382?'#000':'#fff'}
