@@ -15,6 +15,7 @@
   .side{position:relative;padding:12px 8px;display:flex;flex-direction:column;align-items:center;justify-content:center}
   .logoWrap{position:relative;width:100%;display:flex;align-items:center;justify-content:center}
   .logoWrap img{max-height:70px;max-width:70px;display:block;filter: drop-shadow(0 0 12px rgba(0,0,0,.45));}
+  .record{font-size:12px;color:#ccc;margin-top:4px;}
   .poss{position:absolute;top:6px;right:6px;display:inline-flex;align-items:center;gap:6px;font-size:11px;padding:4px 6px;border-radius:999px;background:#222;border:1px solid #333}
   .poss:before{content:"🏈"}
   .score{font-size:28px;font-weight:900;margin-top:6px}
@@ -72,7 +73,8 @@ function parseGames(data){
       const score=(c.score!=null&&/^\d+$/.test(String(c.score)))?Number(c.score):null;
       const timeouts=c.timeouts!=null?Number(c.timeouts):null;
       const id=team.id||c.id||null;
-      t[c.homeAway==="home"?"home":"away"]={id,abbr,color,score,timeouts,espnLogo};
+      const record=(c.records&&c.records[0]?.summary)||"";
+      t[c.homeAway==="home"?"home":"away"]={id,abbr,color,score,timeouts,espnLogo,record};
     }
     out.push({id:ev.id,date:ev.date,kickoff:new Date(ev.date),state,qclock,period,down,togo,possessionId:sit.possession,home:t.home,away:t.away});
   }
@@ -91,8 +93,14 @@ function gameCard(g){
 
   if(g.state==="pre"){
     return `<div class="card">
-      <div class="side" style="background:${a.color};color:${aTxt}"><div class="logoWrap">${logoImg(a.abbr,a.espnLogo)}</div></div>
-      <div class="side" style="background:${h.color};color:${hTxt}"><div class="logoWrap">${logoImg(h.abbr,h.espnLogo)}</div></div>
+      <div class="side" style="background:${a.color};color:${aTxt}">
+        <div class="logoWrap">${logoImg(a.abbr,a.espnLogo)}</div>
+        <div class="record">${a.record}</div>
+      </div>
+      <div class="side" style="background:${h.color};color:${hTxt}">
+        <div class="logoWrap">${logoImg(h.abbr,h.espnLogo)}</div>
+        <div class="record">${h.record}</div>
+      </div>
       <div class="row"><div class="meta"><span class="tiny">${dateStr} • ${timeStr}</span></div></div>
     </div>`;
   }
@@ -100,24 +108,31 @@ function gameCard(g){
   if(g.state==="post"){
     return `<div class="card">
       <div class="side" style="background:${a.color};color:${aTxt}">
-        <div class="logoWrap">${logoImg(a.abbr,a.espnLogo)}</div><div class="score">${aScore}</div>
+        <div class="logoWrap">${logoImg(a.abbr,a.espnLogo)}</div>
+        <div class="record">${a.record}</div>
+        <div class="score">${aScore}</div>
       </div>
       <div class="side" style="background:${h.color};color:${hTxt}">
-        <div class="logoWrap">${logoImg(h.abbr,h.espnLogo)}</div><div class="score">${hScore}</div>
+        <div class="logoWrap">${logoImg(h.abbr,h.espnLogo)}</div>
+        <div class="record">${h.record}</div>
+        <div class="score">${hScore}</div>
       </div>
       <div class="row"><div class="meta"><span class="tiny">${date.toLocaleDateString([], {month:"short",day:"numeric",year:"numeric"})}</span></div></div>
     </div>`;
   }
 
+  // In progress
   let metaLeft="";
   if(g.state==="in"){metaLeft=badge(g.qclock||"LIVE");if(g.down||g.togo)metaLeft+=" "+badge(`${g.down||"—"} & ${g.togo||"—"}`);}
   return `<div class="card">
     <div class="side" style="background:${a.color};color:${aTxt}">
       <div class="logoWrap">${logoImg(a.abbr,a.espnLogo)}${possAway?"<span class='poss'>POSS</span>":""}</div>
+      <div class="record">${a.record}</div>
       <div class="score">${aScore}</div><div class="tiny">TOs</div>${timeoutsDots(a.timeouts)}
     </div>
     <div class="side" style="background:${h.color};color:${hTxt}">
       <div class="logoWrap">${logoImg(h.abbr,h.espnLogo)}${possHome?"<span class='poss'>POSS</span>":""}</div>
+      <div class="record">${h.record}</div>
       <div class="score">${hScore}</div><div class="tiny">TOs</div>${timeoutsDots(h.timeouts)}
     </div>
     <div class="row"><div class="meta">${metaLeft}</div></div>
