@@ -1,7 +1,10 @@
-# Live NFL Scoreboard
-This project displays real-time NFL game scores using ESPN's public API.
+# Live NFL Scoreboard (Local Logos Version)
+
+This version displays live NFL game data from ESPN while showing local team logos.
 
 ## Setup
-1. Place all team logos (PNG format) inside the 'NFL logos' folder.
-2. Ensure filenames match team abbreviations (e.g., BUF.png, DAL.png, etc.).
-3. Open `index.html` in a browser to view the live scoreboard.
+1. Place your team logos inside the folder: **NFL logos/** (same directory as index.html).
+2. Ensure each file name matches the team abbreviation, e.g. `BUF.png`, `DAL.png`.
+3. Open `index.html` in your browser to view the scoreboard.
+
+If a local logo is missing, it automatically falls back to ESPN’s official logo URL.
