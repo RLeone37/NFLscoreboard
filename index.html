@@ -16,7 +16,6 @@
 /* ── Reset ─────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-/* Force dark background on everything — prevents Safari light-mode bleed */
 :root {
 color-scheme: dark;
 –bg:        #07090e;
@@ -37,51 +36,53 @@ color-scheme: dark;
 –safe-b: env(safe-area-inset-bottom, 0px);
 –safe-l: env(safe-area-inset-left,   0px);
 –safe-r: env(safe-area-inset-right,  0px);
-/* Desktop sidebar width */
 –sidebar-w: 220px;
-/* Bottom nav height (mobile only) */
-–nav-h: 68px;
+–nav-h: 56px;
 }
 
-html {
+/* ── iOS web app shell ─────────────────────────────
+html + body fill the full screen and don’t scroll.
+Only the content region inside scrolls.
+──────────────────────────────────────────────────── */
+html, body {
+height: 100%;
+width: 100%;
+overflow: hidden;
 background: var(–bg) !important;
 color: var(–text) !important;
 }
 
 body {
 font-family: ‘Inter’, system-ui, -apple-system, sans-serif;
-background: var(–bg);
-color: var(–text);
-min-height: 100dvh;
 -webkit-font-smoothing: antialiased;
 -webkit-text-size-adjust: 100%;
-overflow-x: hidden;
-/* Mobile: space for bottom nav */
-padding-bottom: calc(var(–nav-h) + var(–safe-b));
+/* Mobile: fixed flex column filling the whole screen */
+display: flex;
+flex-direction: column;
 }
 
-/* ── Animations ─────────────────────────────────── */
-@keyframes blink { 0%,100%{opacity:1;transform:scale(1);} 50%{opacity:.3;transform:scale(.6);} }
-@keyframes spin   { to { transform:rotate(360deg); } }
-@keyframes up     { from{opacity:0;transform:translateY(6px);} to{opacity:1;transform:none;} }
-@keyframes shimmer{ 0%,100%{opacity:1;} 50%{opacity:.4;} }
+/* ── Animations ──────────────────────────────────── */
+@keyframes blink   { 0%,100%{opacity:1;transform:scale(1);}  50%{opacity:.3;transform:scale(.6);} }
+@keyframes spin    { to { transform:rotate(360deg); } }
+@keyframes up      { from{opacity:0;transform:translateY(6px);} to{opacity:1;transform:none;} }
+@keyframes shimmer { 0%,100%{opacity:1;} 50%{opacity:.4;} }
 
 /* ═══════════════════════════════════════════════════
-HEADER
+HEADER  — fixed chrome, never scrolls
 ═══════════════════════════════════════════════════ */
 .header {
-/* On mobile: not sticky — sits below Dynamic Island naturally via safe-area padding */
-position: relative;
-z-index: 60;
-padding-top:    calc(var(–safe-t) + 16px);
-padding-bottom: 14px;
-padding-left:   calc(var(–safe-l) + 20px);
-padding-right:  calc(var(–safe-r) + 20px);
-background: #07090e;
+flex-shrink: 0;               /* never shrinks in the flex column */
+/* Top padding absorbs Dynamic Island / notch via safe-area */
+padding-top:    calc(var(–safe-t) + 12px);
+padding-bottom: 12px;
+padding-left:   calc(var(–safe-l) + 18px);
+padding-right:  calc(var(–safe-r) + 18px);
+background: var(–bg);
 border-bottom: 1px solid var(–border);
 display: flex;
 align-items: center;
 gap: 12px;
+z-index: 10;
 }
 
 .header-wordmark {
@@ -135,20 +136,19 @@ flex-shrink: 0;
 .refresh-btn.spin svg { animation: spin .7s linear infinite; }
 
 /* ═══════════════════════════════════════════════════
-STATUS TABS  (Live / Upcoming / Final)
+STATUS TABS — fixed chrome, never scrolls
 ═══════════════════════════════════════════════════ */
 .status-bar {
+flex-shrink: 0;
 display: flex;
 gap: 6px;
-padding: 10px 14px 6px;
+padding: 10px 14px 8px;
+background: var(–bg);
+border-bottom: 1px solid var(–border);
 overflow-x: auto;
 -webkit-overflow-scrolling: touch;
 scrollbar-width: none;
-background: var(–bg);
-/* Sticky on mobile — sits naturally below Dynamic Island */
-position: sticky;
-top: 0;
-z-index: 50;
+z-index: 9;
 }
 .status-bar::-webkit-scrollbar { display: none; }
 
@@ -191,17 +191,28 @@ color: inherit;
 .live-status .scnt.on { background: var(–live-red); color: #fff; }
 
 /* ═══════════════════════════════════════════════════
-MOBILE BOTTOM SPORT NAV
+SCROLL REGION — fills remaining height, scrolls
+═══════════════════════════════════════════════════ */
+.scroll-region {
+flex: 1;
+overflow-y: auto;
+overflow-x: hidden;
+-webkit-overflow-scrolling: touch;
+/* Bottom padding so last card isn’t hidden behind sport nav */
+padding-bottom: calc(var(–nav-h) + var(–safe-b) + 12px);
+}
+
+/* ═══════════════════════════════════════════════════
+MOBILE BOTTOM SPORT NAV — fixed chrome
 ═══════════════════════════════════════════════════ */
 .sport-bar {
-position: fixed;
-bottom: 0; left: 0; right: 0;
-z-index: 60;
+flex-shrink: 0;
+display: flex;
 height: calc(var(–nav-h) + var(–safe-b));
 padding-bottom: var(–safe-b);
-background: #07090e;
+background: var(–bg);
 border-top: 1px solid var(–border);
-display: flex;
+z-index: 10;
 }
 
 .sport-btn {
@@ -236,7 +247,6 @@ transition: transform .2s;
 }
 .sport-btn.active .sport-icon { transform: scale(1.12); }
 
-/* Active top bar on mobile */
 .sport-btn::after {
 content: ‘’;
 position: absolute;
@@ -261,14 +271,11 @@ border: 2px solid var(–bg);
 .live-badge.show { display: block; }
 
 /* ═══════════════════════════════════════════════════
-LAYOUT — MOBILE default, DESKTOP override
+SPORT VIEWS & SECTIONS
 ═══════════════════════════════════════════════════ */
-
-/* Game content area */
 .sport-view { display: none; }
 .sport-view.active { display: block; }
 
-/* Sidebar hidden by default (mobile) */
 .sidebar { display: none; }
 
 .status-section { display: none; padding: 10px 12px 0; }
@@ -278,48 +285,71 @@ LAYOUT — MOBILE default, DESKTOP override
 .cards-grid {
 display: grid;
 grid-template-columns: 1fr;
-gap: 0; /* cards have their own margin-bottom */
+gap: 0;
 }
 
 /* ── DESKTOP (≥ 768px) ──────────────────────────── */
 @media (min-width: 768px) {
 
+/* Reset the mobile flex shell */
+html, body {
+height: auto;
+overflow: auto;
+}
+
 body {
+display: block;
 padding-bottom: 32px;
+}
+
+/* Desktop layout: sidebar + main column */
+.app-shell {
 display: grid;
 grid-template-columns: var(–sidebar-w) 1fr;
 grid-template-rows: auto 1fr;
 min-height: 100dvh;
 }
 
-/* Header: sticky on desktop, full width */
 .header {
-position: sticky;
-top: 0;
 grid-column: 1 / -1;
 grid-row: 1;
 padding-top: 14px;
 padding-bottom: 14px;
 padding-left: 28px;
 padding-right: 28px;
+position: sticky;
+top: 0;
+z-index: 60;
 }
 
-/* Status bar: not sticky on desktop (sidebar handles nav) */
+/* Scroll region: just normal block flow on desktop */
+.scroll-region {
+overflow: visible;
+padding-bottom: 0;
+flex: none;
+grid-column: 1 / -1;
+grid-row: 2;
+display: grid;
+grid-template-columns: var(–sidebar-w) 1fr;
+}
+
+/* Status bar sits inside scroll-region on desktop, non-sticky */
 .status-bar {
 position: relative;
-top: auto;
-z-index: auto;
+grid-column: 2;
+border-bottom: none;
+padding-top: 16px;
 }
 
 /* Hide mobile bottom nav */
 .sport-bar { display: none; }
 
-/* Sidebar sport nav */
+/* Sidebar */
 .sidebar {
 display: flex;
 flex-direction: column;
 grid-column: 1;
-grid-row: 2 / -1;
+grid-row: 1 / -1;
 border-right: 1px solid var(–border);
 background: var(–surface);
 padding: 20px 0;
@@ -327,6 +357,7 @@ position: sticky;
 top: 57px;
 height: calc(100dvh - 57px);
 overflow-y: auto;
+align-self: start;
 }
 
 .sidebar-btn {
@@ -347,14 +378,9 @@ width: 100%;
 text-align: left;
 transition: background .15s, color .15s;
 position: relative;
-border-radius: 0;
 }
 .sidebar-btn:hover  { background: rgba(255,255,255,.04); color: var(–text-dim); }
-.sidebar-btn.active {
-background: rgba(255,255,255,.07);
-color: var(–text);
-}
-/* Left accent bar */
+.sidebar-btn.active { background: rgba(255,255,255,.07); color: var(–text); }
 .sidebar-btn::before {
 content: ‘’;
 position: absolute;
@@ -366,9 +392,7 @@ transform: scaleY(0);
 transition: transform .2s;
 }
 .sidebar-btn.active::before { transform: scaleY(1); }
-
 .sidebar-icon { font-size: 1.3rem; flex-shrink: 0; }
-
 .sidebar-live-dot {
 width: 7px; height: 7px; border-radius: 50%;
 background: var(–live-red);
@@ -378,13 +402,13 @@ animation: blink 1.6s ease-in-out infinite;
 }
 .sidebar-live-dot.show { display: block; }
 
-/* Sport views fill main column */
-.sport-view { grid-column: 2; }
+/* Sport views fill main column inside scroll-region */
+.sport-view { grid-column: 2; display: none; }
 .sport-view.active { display: block; }
 
 .status-section { padding: 10px 24px 0; }
 
-/* Card grid — 2 columns on medium desktop */
+/* 2-column card grid on desktop */
 .cards-grid {
 grid-template-columns: repeat(2, 1fr);
 gap: 10px;
@@ -393,7 +417,7 @@ padding-bottom: 10px;
 .cards-grid .game-card { margin-bottom: 0; }
 }
 
-/* 3-column grid on wide screens */
+/* 3-column on wide screens */
 @media (min-width: 1200px) {
 :root { –sidebar-w: 240px; }
 .cards-grid { grid-template-columns: repeat(3, 1fr); }
@@ -565,57 +589,58 @@ padding:10px 16px 0; letter-spacing:.02em;
   <div class="live-pill" id="livePill"><span class="live-pill-dot"></span>Live</div>
 </header>
 
-<!-- ── Desktop sidebar (hidden on mobile via CSS) ── -->
+<!-- ── Status tabs (Live / Upcoming / Final) ─────── -->
 
-<aside class="sidebar">
-  <button class="sidebar-btn active" data-sport="nfl">
-    <span class="sidebar-icon">🏈</span> NFL
-    <span class="sidebar-live-dot" id="nfl-sdot"></span>
-  </button>
-  <button class="sidebar-btn" data-sport="mlb">
-    <span class="sidebar-icon">⚾</span> MLB
-    <span class="sidebar-live-dot" id="mlb-sdot"></span>
-  </button>
-  <button class="sidebar-btn" data-sport="nhl">
-    <span class="sidebar-icon">🏒</span> NHL
-    <span class="sidebar-live-dot" id="nhl-sdot"></span>
-  </button>
-</aside>
+<!-- One shared bar; JS swaps counts per active sport -->
 
-<!-- ── Sport views ───────────────────────────────── -->
-
-<div class="sport-view active" id="view-nfl">
-  <div class="status-bar">
-    <button class="status-btn live-status active" data-status="live">Live <span class="scnt" id="cntLive">–</span></button>
-    <button class="status-btn" data-status="pre">Upcoming <span class="scnt" id="cntPre">–</span></button>
-    <button class="status-btn" data-status="post">Final <span class="scnt" id="cntPost">–</span></button>
-  </div>
-  <div class="status-section active" id="nfl-live"><div class="cards-grid" id="ng-live"></div></div>
-  <div class="status-section"        id="nfl-pre"> <div class="cards-grid" id="ng-pre"></div></div>
-  <div class="status-section"        id="nfl-post"><div class="cards-grid" id="ng-post"></div></div>
-</div>
-<div class="sport-view" id="view-mlb">
-  <div class="status-bar">
-    <button class="status-btn live-status active" data-status="live">Live <span class="scnt" id="mcntLive">–</span></button>
-    <button class="status-btn" data-status="pre">Upcoming <span class="scnt" id="mcntPre">–</span></button>
-    <button class="status-btn" data-status="post">Final <span class="scnt" id="mcntPost">–</span></button>
-  </div>
-  <div class="status-section active" id="mlb-live"><div class="cards-grid" id="mg-live"></div></div>
-  <div class="status-section"        id="mlb-pre"> <div class="cards-grid" id="mg-pre"></div></div>
-  <div class="status-section"        id="mlb-post"><div class="cards-grid" id="mg-post"></div></div>
-</div>
-<div class="sport-view" id="view-nhl">
-  <div class="status-bar">
-    <button class="status-btn live-status active" data-status="live">Live <span class="scnt" id="hcntLive">–</span></button>
-    <button class="status-btn" data-status="pre">Upcoming <span class="scnt" id="hcntPre">–</span></button>
-    <button class="status-btn" data-status="post">Final <span class="scnt" id="hcntPost">–</span></button>
-  </div>
-  <div class="status-section active" id="nhl-live"><div class="cards-grid" id="hg-live"></div></div>
-  <div class="status-section"        id="nhl-pre"> <div class="cards-grid" id="hg-pre"></div></div>
-  <div class="status-section"        id="nhl-post"><div class="cards-grid" id="hg-post"></div></div>
+<div class="status-bar" id="statusBar">
+  <button class="status-btn live-status active" data-status="live">Live     <span class="scnt" id="cntLive">–</span></button>
+  <button class="status-btn"                    data-status="pre"> Upcoming <span class="scnt" id="cntPre">–</span></button>
+  <button class="status-btn"                    data-status="post">Final    <span class="scnt" id="cntPost">–</span></button>
 </div>
 
-<p class="footer-note" id="footNote"></p>
+<!-- ── Scrollable content region ─────────────────── -->
+
+<div class="scroll-region">
+
+  <!-- Desktop sidebar (hidden on mobile) -->
+
+  <aside class="sidebar">
+    <button class="sidebar-btn active" data-sport="nfl">
+      <span class="sidebar-icon">🏈</span> NFL
+      <span class="sidebar-live-dot" id="nfl-sdot"></span>
+    </button>
+    <button class="sidebar-btn" data-sport="mlb">
+      <span class="sidebar-icon">⚾</span> MLB
+      <span class="sidebar-live-dot" id="mlb-sdot"></span>
+    </button>
+    <button class="sidebar-btn" data-sport="nhl">
+      <span class="sidebar-icon">🏒</span> NHL
+      <span class="sidebar-live-dot" id="nhl-sdot"></span>
+    </button>
+  </aside>
+
+  <!-- Sport views -->
+
+  <div class="sport-view active" id="view-nfl">
+    <div class="status-section active" id="nfl-live"><div class="cards-grid" id="ng-live"></div></div>
+    <div class="status-section"        id="nfl-pre"> <div class="cards-grid" id="ng-pre"></div></div>
+    <div class="status-section"        id="nfl-post"><div class="cards-grid" id="ng-post"></div></div>
+  </div>
+  <div class="sport-view" id="view-mlb">
+    <div class="status-section active" id="mlb-live"><div class="cards-grid" id="mg-live"></div></div>
+    <div class="status-section"        id="mlb-pre"> <div class="cards-grid" id="mg-pre"></div></div>
+    <div class="status-section"        id="mlb-post"><div class="cards-grid" id="mg-post"></div></div>
+  </div>
+  <div class="sport-view" id="view-nhl">
+    <div class="status-section active" id="nhl-live"><div class="cards-grid" id="hg-live"></div></div>
+    <div class="status-section"        id="nhl-pre"> <div class="cards-grid" id="hg-pre"></div></div>
+    <div class="status-section"        id="nhl-post"><div class="cards-grid" id="hg-post"></div></div>
+  </div>
+
+  <p class="footer-note" id="footNote"></p>
+
+</div><!-- end scroll-region -->
 
 <!-- ── Mobile bottom sport bar ───────────────────── -->
 
@@ -1112,23 +1137,20 @@ function renderSport(sport, games) {
 }
 
 function updateCounts() {
-  const pfx = { nfl:'', mlb:'m', nhl:'h' };
-  ['nfl','mlb','nhl'].forEach(sport => {
-    const games = cache[sport] || [];
-    const p = pfx[sport];
-    const liveN  = games.filter(g=>g.state==='in'||g.isHalf||g.isIntermission).length;
-    const preN   = games.filter(g=>g.state==='pre').length;
-    const postN  = games.filter(g=>g.state==='post').length;
-    const cL = document.getElementById(`${p}cntLive`);
-    const cP = document.getElementById(`${p}cntPre`);
-    const cPo= document.getElementById(`${p}cntPost`);
-    if (cL)  { cL.textContent  = liveN  || '–'; cL.classList.toggle('on', liveN > 0); }
-    if (cP)  cP.textContent  = preN   || '–';
-    if (cPo) cPo.textContent = postN  || '–';
-  });
-  // Header live pill — show if current sport has live games
-  const cur = cache[activeSport] || [];
-  const anyLive = cur.some(g=>g.state==='in'||g.isHalf||g.isIntermission);
+  const games = cache[activeSport] || [];
+  const liveN = games.filter(g=>g.state==='in'||g.isHalf||g.isIntermission).length;
+  const preN  = games.filter(g=>g.state==='pre').length;
+  const postN = games.filter(g=>g.state==='post').length;
+
+  const cL = document.getElementById('cntLive');
+  const cP = document.getElementById('cntPre');
+  const cPo= document.getElementById('cntPost');
+  if (cL)  { cL.textContent  = liveN  || '–'; cL.classList.toggle('on', liveN > 0); }
+  if (cP)  cP.textContent  = preN   || '–';
+  if (cPo) cPo.textContent = postN  || '–';
+
+  // Header live pill
+  const anyLive = (cache[activeSport]||[]).some(g=>g.state==='in'||g.isHalf||g.isIntermission);
   document.getElementById('livePill').classList.toggle('show', anyLive);
 }
 
@@ -1196,22 +1218,17 @@ document.querySelectorAll('.sidebar-btn').forEach(btn => {
   btn.addEventListener('click', () => switchSport(btn.dataset.sport));
 });
 
-// Status tabs — each sport view has its own set
-document.querySelectorAll('.status-bar').forEach(bar => {
-  bar.querySelectorAll('.status-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const status = btn.dataset.status;
-      // Deactivate all tabs in this bar
-      bar.querySelectorAll('.status-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      // Find parent sport-view and toggle its sections
-      const view = bar.closest('.sport-view');
-      if (view) {
-        view.querySelectorAll('.status-section').forEach(s => s.classList.remove('active'));
-        const sport = view.id.replace('view-','');
-        const el = document.getElementById(`${sport}-${status}`);
-        if (el) el.classList.add('active');
-      }
+// Status tabs — single shared bar
+document.querySelectorAll('#statusBar .status-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const status = btn.dataset.status;
+    document.querySelectorAll('#statusBar .status-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    activeStatus = status;
+    ['nfl','mlb','nhl'].forEach(sport => {
+      document.querySelectorAll(`#view-${sport} .status-section`).forEach(s => s.classList.remove('active'));
+      const el = document.getElementById(`${sport}-${status}`);
+      if (el) el.classList.add('active');
     });
   });
 });
