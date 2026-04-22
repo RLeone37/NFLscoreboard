@@ -16,41 +16,59 @@
 /* ── Reset ─────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+/* Force dark background on everything — prevents Safari light-mode bleed */
 :root {
-–bg:         #07090e;
-–surface:    #0d1018;
-–card:       #111520;
-–card-hi:    #161b28;
-–border:     rgba(255,255,255,0.07);
-–border-hi:  rgba(255,255,255,0.13);
-–text:       #eef0f6;
-–text-dim:   #8a92a8;
-–text-mute:  #3d4460;
-–live-red:   #ef4444;
-–live-bg:    rgba(239,68,68,0.11);
-–gold:       #f59e0b;
-–green:      #22c55e;
-–blue:       #3b82f6;
+color-scheme: dark;
+–bg:        #07090e;
+–surface:   #0d1018;
+–card:      #111520;
+–card-hi:   #161b28;
+–border:    rgba(255,255,255,0.08);
+–border-hi: rgba(255,255,255,0.14);
+–text:      #eef0f6;
+–text-dim:  #8a92a8;
+–text-mute: #3d4460;
+–live-red:  #ef4444;
+–live-bg:   rgba(239,68,68,0.11);
+–gold:      #f59e0b;
+–green:     #22c55e;
+–blue:      #3b82f6;
 –safe-t: env(safe-area-inset-top,    0px);
 –safe-b: env(safe-area-inset-bottom, 0px);
 –safe-l: env(safe-area-inset-left,   0px);
 –safe-r: env(safe-area-inset-right,  0px);
+/* Desktop sidebar width */
+–sidebar-w: 220px;
+/* Bottom nav height (mobile only) */
+–nav-h: 68px;
 }
 
-html { background: var(–bg); }
+html {
+background: var(–bg) !important;
+color: var(–text) !important;
+}
 
 body {
-font-family: ‘Inter’, system-ui, sans-serif;
+font-family: ‘Inter’, system-ui, -apple-system, sans-serif;
 background: var(–bg);
 color: var(–text);
 min-height: 100dvh;
 -webkit-font-smoothing: antialiased;
 -webkit-text-size-adjust: 100%;
 overflow-x: hidden;
-padding-bottom: calc(90px + var(–safe-b));
+/* Mobile: space for bottom nav */
+padding-bottom: calc(var(–nav-h) + var(–safe-b));
 }
 
-/* ── Header ───────────────────────────────────────── */
+/* ── Animations ─────────────────────────────────── */
+@keyframes blink { 0%,100%{opacity:1;transform:scale(1);} 50%{opacity:.3;transform:scale(.6);} }
+@keyframes spin   { to { transform:rotate(360deg); } }
+@keyframes up     { from{opacity:0;transform:translateY(6px);} to{opacity:1;transform:none;} }
+@keyframes shimmer{ 0%,100%{opacity:1;} 50%{opacity:.4;} }
+
+/* ═══════════════════════════════════════════════════
+HEADER
+═══════════════════════════════════════════════════ */
 .header {
 position: sticky;
 top: 0;
@@ -59,9 +77,7 @@ padding-top:    calc(var(–safe-t) + 12px);
 padding-bottom: 12px;
 padding-left:   calc(var(–safe-l) + 16px);
 padding-right:  calc(var(–safe-r) + 16px);
-background: rgba(7,9,14,0.90);
-backdrop-filter: blur(28px) saturate(180%);
--webkit-backdrop-filter: blur(28px) saturate(180%);
+background: #07090e;
 border-bottom: 1px solid var(–border);
 display: flex;
 align-items: center;
@@ -85,7 +101,7 @@ gap: 5px;
 padding: 4px 10px;
 border-radius: 20px;
 background: var(–live-bg);
-border: 1px solid rgba(239,68,68,.25);
+border: 1px solid rgba(239,68,68,.28);
 font-size: 0.68rem;
 font-weight: 600;
 letter-spacing: 0.07em;
@@ -100,7 +116,6 @@ width: 6px; height: 6px; border-radius: 50%;
 background: var(–live-red);
 animation: blink 1.6s ease-in-out infinite;
 }
-@keyframes blink { 0%,100%{opacity:1;transform:scale(1);} 50%{opacity:.3;transform:scale(.6);} }
 
 .refresh-btn {
 width: 34px; height: 34px; border-radius: 50%;
@@ -114,88 +129,22 @@ touch-action: manipulation;
 transition: background .15s, color .15s;
 flex-shrink: 0;
 }
+.refresh-btn:hover  { background: var(–card-hi); color: var(–text); }
 .refresh-btn:active { background: var(–card-hi); color: var(–blue); }
 .refresh-btn svg { width: 15px; height: 15px; }
 .refresh-btn.spin svg { animation: spin .7s linear infinite; }
-@keyframes spin { to { transform:rotate(360deg); } }
 
-/* ── Sport Switcher (bottom bar) ──────────────────── */
-.sport-bar {
-position: fixed;
-bottom: 0; left: 0; right: 0;
-z-index: 60;
-padding-bottom: var(–safe-b);
-background: rgba(7,9,14,0.95);
-backdrop-filter: blur(24px) saturate(180%);
--webkit-backdrop-filter: blur(24px) saturate(180%);
-border-top: 1px solid var(–border);
-display: flex;
-}
-
-.sport-btn {
-flex: 1;
-display: flex;
-flex-direction: column;
-align-items: center;
-justify-content: center;
-gap: 4px;
-padding: 10px 4px 8px;
-border: none;
-background: transparent;
-color: var(–text-mute);
-cursor: pointer;
--webkit-tap-highlight-color: transparent;
-touch-action: manipulation;
-transition: color .2s;
-font-family: ‘Oswald’, sans-serif;
-font-size: 0.68rem;
-font-weight: 600;
-letter-spacing: 0.08em;
-text-transform: uppercase;
-position: relative;
-}
-
-.sport-btn.active { color: var(–text); }
-
-.sport-btn .sport-icon {
-font-size: 1.4rem;
-line-height: 1;
-transition: transform .2s;
-}
-.sport-btn.active .sport-icon { transform: scale(1.1); }
-
-/* Active indicator bar */
-.sport-btn::after {
-content: ‘’;
-position: absolute;
-top: 0; left: 20%; right: 20%;
-height: 2px;
-border-radius: 0 0 2px 2px;
-background: var(–text);
-transform: scaleX(0);
-transition: transform .25s;
-}
-.sport-btn.active::after { transform: scaleX(1); }
-
-.sport-btn .live-badge {
-display: none;
-position: absolute;
-top: 6px; right: calc(50% - 18px);
-width: 8px; height: 8px;
-border-radius: 50%;
-background: var(–live-red);
-border: 2px solid var(–bg);
-}
-.sport-btn .live-badge.show { display: block; }
-
-/* ── Status Tabs (Live / Upcoming / Final) ──────── */
+/* ═══════════════════════════════════════════════════
+STATUS TABS  (Live / Upcoming / Final)
+═══════════════════════════════════════════════════ */
 .status-bar {
 display: flex;
 gap: 6px;
-padding: 12px 14px 2px;
+padding: 12px 14px 4px;
 overflow-x: auto;
 -webkit-overflow-scrolling: touch;
 scrollbar-width: none;
+background: var(–bg);
 }
 .status-bar::-webkit-scrollbar { display: none; }
 
@@ -219,8 +168,13 @@ transition: all .2s;
 display: flex; align-items: center; justify-content: center;
 gap: 6px;
 }
+.status-btn:hover  { background: var(–card); color: var(–text-dim); }
 .status-btn.active { background: var(–card-hi); border-color: var(–border-hi); color: var(–text); }
-.status-btn.live-status.active { border-color:rgba(239,68,68,.35); background:rgba(239,68,68,.08); color:var(–live-red); }
+.status-btn.live-status.active {
+border-color: rgba(239,68,68,.35);
+background: rgba(239,68,68,.08);
+color: var(–live-red);
+}
 
 .scnt {
 display: inline-flex; align-items: center; justify-content: center;
@@ -232,14 +186,207 @@ color: inherit;
 }
 .live-status .scnt.on { background: var(–live-red); color: #fff; }
 
-/* ── Game sections ────────────────────────────────── */
+/* ═══════════════════════════════════════════════════
+MOBILE BOTTOM SPORT NAV
+═══════════════════════════════════════════════════ */
+.sport-bar {
+position: fixed;
+bottom: 0; left: 0; right: 0;
+z-index: 60;
+height: calc(var(–nav-h) + var(–safe-b));
+padding-bottom: var(–safe-b);
+background: #07090e;
+border-top: 1px solid var(–border);
+display: flex;
+}
+
+.sport-btn {
+flex: 1;
+display: flex;
+flex-direction: column;
+align-items: center;
+justify-content: center;
+gap: 3px;
+padding: 8px 4px 6px;
+border: none;
+background: transparent;
+color: var(–text-mute);
+cursor: pointer;
+-webkit-tap-highlight-color: transparent;
+touch-action: manipulation;
+transition: color .2s;
+font-family: ‘Oswald’, sans-serif;
+font-size: 0.65rem;
+font-weight: 600;
+letter-spacing: 0.08em;
+text-transform: uppercase;
+position: relative;
+}
+.sport-btn.active { color: var(–text); }
+.sport-btn:hover  { color: var(–text-dim); }
+
+.sport-icon {
+font-size: 1.35rem;
+line-height: 1;
+transition: transform .2s;
+}
+.sport-btn.active .sport-icon { transform: scale(1.12); }
+
+/* Active top bar on mobile */
+.sport-btn::after {
+content: ‘’;
+position: absolute;
+top: 0; left: 22%; right: 22%;
+height: 2px;
+border-radius: 0 0 3px 3px;
+background: var(–text);
+transform: scaleX(0);
+transition: transform .25s;
+}
+.sport-btn.active::after { transform: scaleX(1); }
+
+.live-badge {
+display: none;
+position: absolute;
+top: 5px; right: calc(50% - 20px);
+width: 8px; height: 8px;
+border-radius: 50%;
+background: var(–live-red);
+border: 2px solid var(–bg);
+}
+.live-badge.show { display: block; }
+
+/* ═══════════════════════════════════════════════════
+LAYOUT — MOBILE default, DESKTOP override
+═══════════════════════════════════════════════════ */
+
+/* Game content area */
 .sport-view { display: none; }
 .sport-view.active { display: block; }
+
+/* Sidebar hidden by default (mobile) */
+.sidebar { display: none; }
 
 .status-section { display: none; padding: 10px 12px 0; }
 .status-section.active { display: block; }
 
-/* ── Cards ────────────────────────────────────────── */
+/* Card grid — single column on mobile */
+.cards-grid {
+display: grid;
+grid-template-columns: 1fr;
+gap: 0; /* cards have their own margin-bottom */
+}
+
+/* ── DESKTOP (≥ 768px) ──────────────────────────── */
+@media (min-width: 768px) {
+
+body {
+padding-bottom: 32px;
+display: grid;
+grid-template-columns: var(–sidebar-w) 1fr;
+grid-template-rows: auto 1fr;
+min-height: 100dvh;
+}
+
+/* Header spans full width */
+.header {
+grid-column: 1 / -1;
+grid-row: 1;
+padding-left: 28px;
+padding-right: 28px;
+}
+
+/* Hide mobile bottom nav */
+.sport-bar { display: none; }
+
+/* Sidebar sport nav */
+.sidebar {
+display: flex;
+flex-direction: column;
+grid-column: 1;
+grid-row: 2 / -1;
+border-right: 1px solid var(–border);
+background: var(–surface);
+padding: 20px 0;
+position: sticky;
+top: 57px;
+height: calc(100dvh - 57px);
+overflow-y: auto;
+}
+
+.sidebar-btn {
+display: flex;
+align-items: center;
+gap: 12px;
+padding: 12px 20px;
+border: none;
+background: transparent;
+color: var(–text-mute);
+cursor: pointer;
+font-family: ‘Oswald’, sans-serif;
+font-size: 0.9rem;
+font-weight: 600;
+letter-spacing: 0.06em;
+text-transform: uppercase;
+width: 100%;
+text-align: left;
+transition: background .15s, color .15s;
+position: relative;
+border-radius: 0;
+}
+.sidebar-btn:hover  { background: rgba(255,255,255,.04); color: var(–text-dim); }
+.sidebar-btn.active {
+background: rgba(255,255,255,.07);
+color: var(–text);
+}
+/* Left accent bar */
+.sidebar-btn::before {
+content: ‘’;
+position: absolute;
+left: 0; top: 20%; bottom: 20%;
+width: 3px;
+border-radius: 0 3px 3px 0;
+background: var(–text);
+transform: scaleY(0);
+transition: transform .2s;
+}
+.sidebar-btn.active::before { transform: scaleY(1); }
+
+.sidebar-icon { font-size: 1.3rem; flex-shrink: 0; }
+
+.sidebar-live-dot {
+width: 7px; height: 7px; border-radius: 50%;
+background: var(–live-red);
+margin-left: auto;
+display: none;
+animation: blink 1.6s ease-in-out infinite;
+}
+.sidebar-live-dot.show { display: block; }
+
+/* Sport views fill main column */
+.sport-view { grid-column: 2; }
+.sport-view.active { display: block; }
+
+.status-section { padding: 10px 24px 0; }
+
+/* Card grid — 2 columns on medium desktop */
+.cards-grid {
+grid-template-columns: repeat(2, 1fr);
+gap: 10px;
+padding-bottom: 10px;
+}
+.cards-grid .game-card { margin-bottom: 0; }
+}
+
+/* 3-column grid on wide screens */
+@media (min-width: 1200px) {
+:root { –sidebar-w: 240px; }
+.cards-grid { grid-template-columns: repeat(3, 1fr); }
+}
+
+/* ═══════════════════════════════════════════════════
+GAME CARDS
+═══════════════════════════════════════════════════ */
 .game-card {
 background: var(–card);
 border: 1px solid var(–border);
@@ -249,12 +396,9 @@ margin-bottom: 10px;
 animation: up .28s ease both;
 position: relative;
 }
-@keyframes up { from{opacity:0;transform:translateY(6px);} to{opacity:1;transform:none;} }
-.game-card.live { border-color: rgba(239,68,68,.22); }
-
+.game-card.live { border-color: rgba(239,68,68,.24); }
 .live-bar { height: 2px; background: linear-gradient(90deg,var(–live-red),transparent 70%); }
 
-/* Card top row */
 .card-top {
 display: flex; align-items: center; justify-content: space-between;
 padding: 8px 14px;
@@ -268,37 +412,32 @@ padding: 3px 9px; border-radius: 20px;
 font-family: ‘Oswald’, sans-serif;
 font-weight: 500; font-size: 0.7rem; letter-spacing: .08em; text-transform: uppercase;
 }
-.p-live  { background:var(–live-bg);             color:var(–live-red); }
-.p-final { background:rgba(100,110,130,.13);       color:var(–text-dim); }
-.p-pre   { background:rgba(59,130,246,.11);        color:#60a5fa; }
+.p-live    { background:var(–live-bg);           color:var(–live-red); }
+.p-final   { background:rgba(100,110,130,.13);     color:var(–text-dim); }
+.p-pre     { background:rgba(59,130,246,.11);      color:#60a5fa; }
 .p-special { background:rgba(245,158,11,.12);      color:var(–gold); }
 .p-dot { width:5px;height:5px;border-radius:50%;background:currentColor;animation:blink 1.6s ease-in-out infinite; }
 
 .card-meta { font-size:.73rem; font-weight:500; color:var(–text-dim); text-align:right; max-width:55%; }
 
-/* Card body */
 .card-body {
 display: grid;
-grid-template-columns: 1fr 60px 1fr;
+grid-template-columns: 1fr 64px 1fr;
 align-items: center;
 padding: 16px 10px;
 gap: 4px;
 }
 
-.team-col {
-display: flex; flex-direction: column; align-items: center; gap: 6px;
-}
+.team-col { display:flex; flex-direction:column; align-items:center; gap:6px; }
 
 .logo-wrap {
-position: relative; width:58px; height:58px;
+position:relative; width:58px; height:58px;
 display:flex; align-items:center; justify-content:center;
 }
-
 .team-logo {
-width: 54px; height: 54px;
-object-fit: contain;
-filter: drop-shadow(0 2px 8px rgba(0,0,0,.6));
-display: block;
+width:54px; height:54px; object-fit:contain;
+filter:drop-shadow(0 2px 8px rgba(0,0,0,.65));
+display:block;
 }
 
 .poss-pip {
@@ -309,17 +448,12 @@ display:flex; align-items:center; justify-content:center;
 font-size:7px; line-height:1;
 }
 
-/* Baseball on-base indicator */
-.bases {
-position:absolute; bottom:-4px; right:-4px;
-width:24px; height:24px;
-}
+.bases { position:absolute; bottom:-4px; right:-4px; width:24px; height:24px; }
 .bases svg { width:24px; height:24px; }
 
 .team-abbr {
 font-family:‘Oswald’,sans-serif; font-weight:700; font-size:1rem;
-letter-spacing:.04em; text-transform:uppercase; line-height:1;
-color:var(–text);
+letter-spacing:.04em; text-transform:uppercase; line-height:1; color:var(–text);
 }
 .team-record { font-size:.68rem; color:var(–text-mute); font-weight:500; line-height:1; }
 
@@ -327,9 +461,8 @@ color:var(–text);
 .to-dot { width:6px;height:6px;border-radius:50%;background:var(–text-mute);border:1px solid var(–border-hi); }
 .to-dot.on { background:var(–gold);border-color:var(–gold); }
 
-/* Score center */
 .score-center { display:flex; flex-direction:column; align-items:center; gap:2px; }
-.scores-row { display:flex; align-items:center; gap:5px; }
+.scores-row   { display:flex; align-items:center; gap:5px; }
 .score-num {
 font-family:‘Oswald’,sans-serif; font-weight:700; font-size:2.2rem;
 line-height:1; color:var(–text); min-width:30px; text-align:center;
@@ -339,11 +472,9 @@ line-height:1; color:var(–text); min-width:30px; text-align:center;
 .score-sep { font-family:‘Oswald’,sans-serif; font-weight:300; font-size:1.4rem; color:var(–border-hi); line-height:1; }
 .vs-lbl { font-family:‘Oswald’,sans-serif; font-weight:500; font-size:.85rem; color:var(–text-mute); letter-spacing:.06em; }
 
-/* Card footer */
 .card-footer {
 display:flex; align-items:center; justify-content:center;
-gap:6px; flex-wrap:wrap;
-padding:9px 14px 11px;
+gap:6px; flex-wrap:wrap; padding:9px 14px 11px;
 border-top:1px solid var(–border);
 }
 
@@ -354,54 +485,32 @@ background:var(–surface); border:1px solid var(–border);
 font-family:‘Oswald’,sans-serif; font-weight:500; font-size:.76rem;
 letter-spacing:.04em; color:var(–text-dim);
 }
-.chip.hl { background:rgba(245,158,11,.09); border-color:rgba(245,158,11,.22); color:var(–gold); }
-.chip.blue { background:rgba(59,130,246,.09); border-color:rgba(59,130,246,.2); color:#60a5fa; }
-.chip.green { background:rgba(34,197,94,.09); border-color:rgba(34,197,94,.2); color:var(–green); }
+.chip.hl    { background:rgba(245,158,11,.09);  border-color:rgba(245,158,11,.22); color:var(–gold); }
+.chip.blue  { background:rgba(59,130,246,.09);  border-color:rgba(59,130,246,.2);  color:#60a5fa; }
+.chip.green { background:rgba(34,197,94,.09);   border-color:rgba(34,197,94,.2);   color:var(–green); }
 
-/* ── MLB Linescore ────────────────────────────────── */
+/* ── MLB Linescore ─────────────────────────────── */
 .linescore-wrap {
-padding: 0 14px 12px;
-border-top: 1px solid var(–border);
-overflow-x: auto;
--webkit-overflow-scrolling: touch;
-scrollbar-width: none;
+padding:0 14px 12px; border-top:1px solid var(–border);
+overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none;
 }
-.linescore-wrap::-webkit-scrollbar { display: none; }
-
+.linescore-wrap::-webkit-scrollbar { display:none; }
 .linescore {
-width: 100%;
-border-collapse: collapse;
-font-family: ‘Oswald’, sans-serif;
-font-size: 0.72rem;
-font-weight: 500;
-margin-top: 10px;
-min-width: 280px;
+width:100%; border-collapse:collapse;
+font-family:‘Oswald’,sans-serif; font-size:0.72rem; font-weight:500;
+margin-top:10px; min-width:280px;
 }
-.linescore th {
-color: var(–text-mute);
-font-weight: 600;
-text-align: center;
-padding: 0 5px 4px;
-letter-spacing: .05em;
-}
-.linescore th.label-col { text-align: left; padding-left: 0; min-width: 36px; }
-.linescore td {
-text-align: center;
-padding: 3px 5px;
-color: var(–text-dim);
-border-radius: 4px;
-}
-.linescore td.label-col { text-align: left; font-weight: 700; color: var(–text); padding-left: 0; }
-.linescore td.stat-col { font-weight: 700; color: var(–text); }
-.linescore tr.current-inning td { background: rgba(255,255,255,.04); }
-.linescore td.cur-cell { color: var(–text); font-weight: 700; }
+.linescore th { color:var(–text-mute);font-weight:600;text-align:center;padding:0 5px 4px;letter-spacing:.05em; }
+.linescore th.label-col { text-align:left;padding-left:0;min-width:36px; }
+.linescore td { text-align:center;padding:3px 5px;color:var(–text-dim);border-radius:4px; }
+.linescore td.label-col { text-align:left;font-weight:700;color:var(–text);padding-left:0; }
+.linescore td.stat-col  { font-weight:700;color:var(–text); }
+.linescore td.cur-cell  { color:var(–text);font-weight:700; }
 
-/* ── Empty / Skeleton ────────────────────────────── */
-.empty-state {
-text-align:center; padding:48px 24px; color:var(–text-mute);
-}
+/* ── Empty / Skeleton ──────────────────────────── */
+.empty-state { text-align:center;padding:48px 24px;color:var(–text-mute); }
 .empty-state svg { width:42px;height:42px;margin:0 auto 12px;display:block;opacity:.2; }
-.empty-state p { font-size:.875rem; font-weight:500; }
+.empty-state p { font-size:.875rem;font-weight:500; }
 
 .skel-card {
 background:var(–card); border:1px solid var(–border);
@@ -411,10 +520,15 @@ animation:shimmer 1.5s ease infinite;
 .sb { height:10px;border-radius:6px;background:rgba(255,255,255,.05);margin-bottom:10px; }
 .sw60{width:60%;} .sw80{width:80%;} .sw40{width:40%;}
 .sb-big { height:54px;width:100%;border-radius:10px;background:rgba(255,255,255,.05);margin:10px 0; }
-@keyframes shimmer { 0%,100%{opacity:1;} 50%{opacity:.4;} }
 
-/* ── Footer note ─────────────────────────────────── */
-.footer-note { text-align:center;font-size:.68rem;color:var(–text-mute);padding:10px 16px 0;letter-spacing:.02em; }
+/* ── Footer note ───────────────────────────────── */
+.footer-note {
+text-align:center; font-size:.68rem; color:var(–text-mute);
+padding:10px 16px 0; letter-spacing:.02em;
+}
+@media (min-width: 768px) {
+.footer-note { grid-column:2; padding-left:24px; text-align:left; }
+}
 </style>
 
 </head>
@@ -434,35 +548,59 @@ animation:shimmer 1.5s ease infinite;
   </button>
 </header>
 
-<!-- ── Status tabs ───────────────────────────────── -->
+<!-- ── Desktop sidebar (hidden on mobile via CSS) ── -->
 
-<div class="status-bar" id="statusBar">
-  <button class="status-btn live-status active" data-status="live">Live <span class="scnt" id="cntLive">–</span></button>
-  <button class="status-btn" data-status="pre">Upcoming <span class="scnt" id="cntPre">–</span></button>
-  <button class="status-btn" data-status="post">Final <span class="scnt" id="cntPost">–</span></button>
-</div>
+<aside class="sidebar">
+  <button class="sidebar-btn active" data-sport="nfl">
+    <span class="sidebar-icon">🏈</span> NFL
+    <span class="sidebar-live-dot" id="nfl-sdot"></span>
+  </button>
+  <button class="sidebar-btn" data-sport="mlb">
+    <span class="sidebar-icon">⚾</span> MLB
+    <span class="sidebar-live-dot" id="mlb-sdot"></span>
+  </button>
+  <button class="sidebar-btn" data-sport="nhl">
+    <span class="sidebar-icon">🏒</span> NHL
+    <span class="sidebar-live-dot" id="nhl-sdot"></span>
+  </button>
+</aside>
 
 <!-- ── Sport views ───────────────────────────────── -->
 
 <div class="sport-view active" id="view-nfl">
-  <div class="status-section active" id="nfl-live"><div id="ng-live"></div></div>
-  <div class="status-section"        id="nfl-pre"><div  id="ng-pre"></div></div>
-  <div class="status-section"        id="nfl-post"><div id="ng-post"></div></div>
+  <div class="status-bar">
+    <button class="status-btn live-status active" data-status="live">Live <span class="scnt" id="cntLive">–</span></button>
+    <button class="status-btn" data-status="pre">Upcoming <span class="scnt" id="cntPre">–</span></button>
+    <button class="status-btn" data-status="post">Final <span class="scnt" id="cntPost">–</span></button>
+  </div>
+  <div class="status-section active" id="nfl-live"><div class="cards-grid" id="ng-live"></div></div>
+  <div class="status-section"        id="nfl-pre"> <div class="cards-grid" id="ng-pre"></div></div>
+  <div class="status-section"        id="nfl-post"><div class="cards-grid" id="ng-post"></div></div>
 </div>
 <div class="sport-view" id="view-mlb">
-  <div class="status-section active" id="mlb-live"><div id="mg-live"></div></div>
-  <div class="status-section"        id="mlb-pre"><div  id="mg-pre"></div></div>
-  <div class="status-section"        id="mlb-post"><div id="mg-post"></div></div>
+  <div class="status-bar">
+    <button class="status-btn live-status active" data-status="live">Live <span class="scnt" id="mcntLive">–</span></button>
+    <button class="status-btn" data-status="pre">Upcoming <span class="scnt" id="mcntPre">–</span></button>
+    <button class="status-btn" data-status="post">Final <span class="scnt" id="mcntPost">–</span></button>
+  </div>
+  <div class="status-section active" id="mlb-live"><div class="cards-grid" id="mg-live"></div></div>
+  <div class="status-section"        id="mlb-pre"> <div class="cards-grid" id="mg-pre"></div></div>
+  <div class="status-section"        id="mlb-post"><div class="cards-grid" id="mg-post"></div></div>
 </div>
 <div class="sport-view" id="view-nhl">
-  <div class="status-section active" id="nhl-live"><div id="hg-live"></div></div>
-  <div class="status-section"        id="nhl-pre"><div  id="hg-pre"></div></div>
-  <div class="status-section"        id="nhl-post"><div id="hg-post"></div></div>
+  <div class="status-bar">
+    <button class="status-btn live-status active" data-status="live">Live <span class="scnt" id="hcntLive">–</span></button>
+    <button class="status-btn" data-status="pre">Upcoming <span class="scnt" id="hcntPre">–</span></button>
+    <button class="status-btn" data-status="post">Final <span class="scnt" id="hcntPost">–</span></button>
+  </div>
+  <div class="status-section active" id="nhl-live"><div class="cards-grid" id="hg-live"></div></div>
+  <div class="status-section"        id="nhl-pre"> <div class="cards-grid" id="hg-pre"></div></div>
+  <div class="status-section"        id="nhl-post"><div class="cards-grid" id="hg-post"></div></div>
 </div>
 
 <p class="footer-note" id="footNote"></p>
 
-<!-- ── Bottom sport bar ──────────────────────────── -->
+<!-- ── Mobile bottom sport bar ───────────────────── -->
 
 <nav class="sport-bar">
   <button class="sport-btn active" data-sport="nfl">
@@ -939,26 +1077,31 @@ function renderSport(sport, games) {
   document.getElementById(`${prefix}g-post`).innerHTML = post.length
     ? post.map(builder).join('') : emptyState('No completed games today');
 
-  // Live badge on sport button
+  // Live badge — mobile bottom nav + desktop sidebar
   document.getElementById(`${sport}-badge`).classList.toggle('show', live.length > 0);
+  const sdot = document.getElementById(`${sport}-sdot`);
+  if (sdot) sdot.classList.toggle('show', live.length > 0);
 }
 
 function updateCounts() {
-  // Sum across all loaded sports for the active status tab
-  let totalLive=0, totalPre=0, totalPost=0;
-  const sport = activeSport;
-  const games = cache[sport] || [];
-  totalLive  = games.filter(g=>g.state==='in'||g.isHalf||g.isIntermission).length;
-  totalPre   = games.filter(g=>g.state==='pre').length;
-  totalPost  = games.filter(g=>g.state==='post').length;
-
-  document.getElementById('cntLive').textContent = totalLive || '–';
-  document.getElementById('cntPre').textContent  = totalPre  || '–';
-  document.getElementById('cntPost').textContent = totalPost || '–';
-  document.getElementById('cntLive').classList.toggle('on', totalLive > 0);
-
+  const pfx = { nfl:'', mlb:'m', nhl:'h' };
+  ['nfl','mlb','nhl'].forEach(sport => {
+    const games = cache[sport] || [];
+    const p = pfx[sport];
+    const liveN  = games.filter(g=>g.state==='in'||g.isHalf||g.isIntermission).length;
+    const preN   = games.filter(g=>g.state==='pre').length;
+    const postN  = games.filter(g=>g.state==='post').length;
+    const cL = document.getElementById(`${p}cntLive`);
+    const cP = document.getElementById(`${p}cntPre`);
+    const cPo= document.getElementById(`${p}cntPost`);
+    if (cL)  { cL.textContent  = liveN  || '–'; cL.classList.toggle('on', liveN > 0); }
+    if (cP)  cP.textContent  = preN   || '–';
+    if (cPo) cPo.textContent = postN  || '–';
+  });
   // Header live pill — show if current sport has live games
-  document.getElementById('livePill').classList.toggle('show', totalLive > 0);
+  const cur = cache[activeSport] || [];
+  const anyLive = cur.some(g=>g.state==='in'||g.isHalf||g.isIntermission);
+  document.getElementById('livePill').classList.toggle('show', anyLive);
 }
 
 /* ═══════════════════════════════════════════════════
@@ -1001,34 +1144,46 @@ async function loadAll(showSkel=false) {
 /* ═══════════════════════════════════════════════════
    UI INTERACTIONS
 ═══════════════════════════════════════════════════ */
-// Sport switcher
+function switchSport(sport) {
+  if (sport === activeSport) return;
+  // Mobile bottom nav
+  document.querySelectorAll('.sport-btn').forEach(b => b.classList.toggle('active', b.dataset.sport === sport));
+  // Desktop sidebar
+  document.querySelectorAll('.sidebar-btn').forEach(b => b.classList.toggle('active', b.dataset.sport === sport));
+  // Sport views
+  document.querySelectorAll('.sport-view').forEach(v => v.classList.remove('active'));
+  document.getElementById(`view-${sport}`).classList.add('active');
+  activeSport = sport;
+  updateCounts();
+  if (!cache[sport]) loadSport(sport, true).then(updateCounts);
+}
+
+// Mobile sport buttons
 document.querySelectorAll('.sport-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    const sport = btn.dataset.sport;
-    if (sport === activeSport) return;
-    document.querySelectorAll('.sport-btn').forEach(b => b.classList.remove('active'));
-    document.querySelectorAll('.sport-view').forEach(v => v.classList.remove('active'));
-    btn.classList.add('active');
-    document.getElementById(`view-${sport}`).classList.add('active');
-    activeSport = sport;
-    updateCounts();
-    // Load sport data if not cached
-    if (!cache[sport]) loadSport(sport, true).then(updateCounts);
-  });
+  btn.addEventListener('click', () => switchSport(btn.dataset.sport));
 });
 
-// Status tabs
-document.querySelectorAll('.status-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    const status = btn.dataset.status;
-    document.querySelectorAll('.status-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    activeStatus = status;
-    // Show matching section in all sport views
-    ['nfl','mlb','nhl'].forEach(sport => {
-      document.querySelectorAll(`#view-${sport} .status-section`).forEach(s => s.classList.remove('active'));
-      const el = document.getElementById(`${sport}-${status}`);
-      if (el) el.classList.add('active');
+// Desktop sidebar buttons
+document.querySelectorAll('.sidebar-btn').forEach(btn => {
+  btn.addEventListener('click', () => switchSport(btn.dataset.sport));
+});
+
+// Status tabs — each sport view has its own set
+document.querySelectorAll('.status-bar').forEach(bar => {
+  bar.querySelectorAll('.status-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const status = btn.dataset.status;
+      // Deactivate all tabs in this bar
+      bar.querySelectorAll('.status-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      // Find parent sport-view and toggle its sections
+      const view = bar.closest('.sport-view');
+      if (view) {
+        view.querySelectorAll('.status-section').forEach(s => s.classList.remove('active'));
+        const sport = view.id.replace('view-','');
+        const el = document.getElementById(`${sport}-${status}`);
+        if (el) el.classList.add('active');
+      }
     });
   });
 });
