@@ -70,22 +70,17 @@ padding-bottom: calc(var(–nav-h) + var(–safe-b));
 HEADER
 ═══════════════════════════════════════════════════ */
 .header {
-position: sticky;
-top: 0;
+/* On mobile: not sticky — sits below Dynamic Island naturally via safe-area padding */
+position: relative;
 z-index: 60;
-/* Push content well below Dynamic Island.
-On Dynamic Island devices safe-area-inset-top ≈ 59px.
-We add 20px on top of that so content sits at ~79px from top edge. */
-padding-top:    calc(var(–safe-t) + 20px);
+padding-top:    calc(var(–safe-t) + 16px);
 padding-bottom: 14px;
 padding-left:   calc(var(–safe-l) + 20px);
 padding-right:  calc(var(–safe-r) + 20px);
-/* Minimum height ensures content never floats up on notch devices */
-min-height: calc(var(–safe-t) + 72px);
 background: #07090e;
 border-bottom: 1px solid var(–border);
 display: flex;
-align-items: flex-end; /* anchor content to bottom of the header block */
+align-items: center;
 gap: 12px;
 }
 
@@ -145,11 +140,15 @@ STATUS TABS  (Live / Upcoming / Final)
 .status-bar {
 display: flex;
 gap: 6px;
-padding: 12px 14px 4px;
+padding: 10px 14px 6px;
 overflow-x: auto;
 -webkit-overflow-scrolling: touch;
 scrollbar-width: none;
 background: var(–bg);
+/* Sticky on mobile — sits naturally below Dynamic Island */
+position: sticky;
+top: 0;
+z-index: 50;
 }
 .status-bar::-webkit-scrollbar { display: none; }
 
@@ -293,12 +292,23 @@ grid-template-rows: auto 1fr;
 min-height: 100dvh;
 }
 
-/* Header spans full width */
+/* Header: sticky on desktop, full width */
 .header {
+position: sticky;
+top: 0;
 grid-column: 1 / -1;
 grid-row: 1;
+padding-top: 14px;
+padding-bottom: 14px;
 padding-left: 28px;
 padding-right: 28px;
+}
+
+/* Status bar: not sticky on desktop (sidebar handles nav) */
+.status-bar {
+position: relative;
+top: auto;
+z-index: auto;
 }
 
 /* Hide mobile bottom nav */
@@ -314,8 +324,8 @@ border-right: 1px solid var(–border);
 background: var(–surface);
 padding: 20px 0;
 position: sticky;
-top: calc(var(–safe-t) + 72px);
-height: calc(100dvh - var(–safe-t) - 72px);
+top: 57px;
+height: calc(100dvh - 57px);
 overflow-y: auto;
 }
 
