@@ -73,15 +73,16 @@ HEADER
 position: sticky;
 top: 0;
 z-index: 60;
-padding-top:    calc(var(–safe-t) + 12px);
-padding-bottom: 12px;
-padding-left:   calc(var(–safe-l) + 16px);
-padding-right:  calc(var(–safe-r) + 16px);
+/* Extra top padding to fully clear Dynamic Island (~59px inset + 8px breathing room) */
+padding-top:    calc(var(–safe-t) + 10px);
+padding-bottom: 14px;
+padding-left:   calc(var(–safe-l) + 20px);
+padding-right:  calc(var(–safe-r) + 20px);
 background: #07090e;
 border-bottom: 1px solid var(–border);
 display: flex;
 align-items: center;
-gap: 10px;
+gap: 12px;
 }
 
 .header-wordmark {
@@ -539,8 +540,6 @@ padding:10px 16px 0; letter-spacing:.02em;
 <!-- ── Header ───────────────────────────────────── -->
 
 <header class="header">
-  <span class="header-wordmark">Scores</span>
-  <div class="live-pill" id="livePill"><span class="live-pill-dot"></span>Live</div>
   <button class="refresh-btn" id="refreshBtn" aria-label="Refresh">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
       <polyline points="23 4 23 10 17 10"/>
@@ -548,6 +547,8 @@ padding:10px 16px 0; letter-spacing:.02em;
       <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
     </svg>
   </button>
+  <span class="header-wordmark">Scores</span>
+  <div class="live-pill" id="livePill"><span class="live-pill-dot"></span>Live</div>
 </header>
 
 <!-- ── Desktop sidebar (hidden on mobile via CSS) ── -->
