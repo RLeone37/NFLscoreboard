@@ -898,10 +898,7 @@ function buildMLBCard(g) {
     if (activeBatter?.shortName)
       chips.push(`<span class="chip green">🏏 ${activeBatter.shortName}</span>`);
   }
-  if (isPre) {
-    if (away.pitcher) chips.push(`<span class="chip blue">⚾ ${away.pitcher.athlete?.shortName||''}</span>`);
-    if (home.pitcher) chips.push(`<span class="chip blue">⚾ ${home.pitcher.athlete?.shortName||''}</span>`);
-  }
+
 
   const footer = chips.length ? `<div class="card-footer">${chips.join('')}</div>` : '';
 
