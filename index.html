@@ -422,10 +422,11 @@ font-weight: 500; font-size: 0.7rem; letter-spacing: .08em; text-transform: uppe
 
 .card-body {
 display: grid;
-grid-template-columns: 1fr 64px 1fr;
+grid-template-columns: 1fr auto 1fr;
 align-items: center;
-padding: 16px 10px;
-gap: 4px;
+padding: 16px 14px;
+gap: 10px;
+width: 100%;
 }
 
 .team-col { display:flex; flex-direction:column; align-items:center; gap:6px; }
@@ -463,6 +464,7 @@ letter-spacing:.04em; text-transform:uppercase; line-height:1; color:var(–text
 
 .score-center { display:flex; flex-direction:column; align-items:center; gap:2px; }
 .scores-row   { display:flex; align-items:center; gap:5px; }
+.inn-arrow    { font-size:.65rem; color:var(–text-mute); margin-top:2px; }
 .score-num {
 font-family:‘Oswald’,sans-serif; font-weight:700; font-size:2.2rem;
 line-height:1; color:var(–text); min-width:30px; text-align:center;
@@ -643,11 +645,24 @@ function pickLogo(logos) {
   return (byRel('scoreboard') || byRel('full') || logos[0])?.href || null;
 }
 
-function logoImg(abbr, espnUrl) {
+// Build ESPN CDN logo URL directly from abbreviation as guaranteed fallback
+function espnLogoUrl(sport, abbr) {
+  if (!abbr) return '';
+  const a = abbr.toLowerCase();
+  const map = { nfl:'nfl', mlb:'mlb', nhl:'nhl' };
+  return `https://a.espncdn.com/i/teamlogos/${map[sport]||sport}/500/scoreboard/${a}.png`;
+}
+
+function logoImg(abbr, apiUrl, sport) {
   const key = (abbr || '').toUpperCase();
-  const src = espnUrl || '';
-  if (!src) return `<div style="width:54px;height:54px;"></div>`;
-  return `<img class="team-logo" src="${src}" alt="${key}" referrerpolicy="no-referrer" crossorigin="anonymous"/>`;
+  // Use API url first; fall back to direct ESPN CDN pattern
+  const primary   = apiUrl || espnLogoUrl(sport, abbr);
+  const secondary = espnLogoUrl(sport, abbr);
+  if (!primary) return `<div style="width:54px;height:54px;"></div>`;
+  const fallback = (primary !== secondary && secondary)
+    ? `this.onerror=null;this.src='${secondary}';`
+    : 'this.onerror=null;';
+  return `<img class="team-logo" src="${primary}" alt="${key}" onerror="${fallback}"/>`;
 }
 
 function fmtTime(d) {
@@ -751,14 +766,14 @@ function buildNFLCard(g) {
     <div class="card-top">${pill}${meta}</div>
     <div class="card-body">
       <div class="team-col">
-        <div class="logo-wrap">${logoImg(away.abbr,away.espnLogo)}${aP?'<div class="poss-pip">🏈</div>':''}</div>
+        <div class="logo-wrap">${logoImg(away.abbr,away.espnLogo,'nfl')}${aP?'<div class="poss-pip">🏈</div>':''}</div>
         <span class="team-abbr">${away.abbr||'–'}</span>
         <span class="team-record">${away.record||''}</span>
         ${isLive&&away.timeouts!=null?toDots(away.timeouts):''}
       </div>
       <div class="score-center">${scoreArea}</div>
       <div class="team-col">
-        <div class="logo-wrap">${logoImg(home.abbr,home.espnLogo)}${hP?'<div class="poss-pip">🏈</div>':''}</div>
+        <div class="logo-wrap">${logoImg(home.abbr,home.espnLogo,'nfl')}${hP?'<div class="poss-pip">🏈</div>':''}</div>
         <span class="team-abbr">${home.abbr||'–'}</span>
         <span class="team-record">${home.record||''}</span>
         ${isLive&&home.timeouts!=null?toDots(home.timeouts):''}
@@ -789,6 +804,8 @@ function parseMLB(data) {
       const t = c.team || {};
       const stats = {};
       for (const s of c.statistics||[]) stats[s.name] = s.displayValue;
+      // Current pitcher: from situation for live games
+      const pitcher = c.probables?.[0] || null;
       teams[c.homeAway] = {
         id:t.id||'', abbr:t.abbreviation||'',
         score: c.score != null ? Number(c.score) : null,
@@ -797,21 +814,19 @@ function parseMLB(data) {
         linescores: c.linescores || [],
         hits: stats.hits || '–',
         errors: stats.errors || '–',
-        pitcher: c.probables?.[0] || null,
+        pitcher,
       };
     }
-    // on-base situation
-    const bases = {
-      first:  !!(sit.onFirst),
-      second: !!(sit.onSecond),
-      third:  !!(sit.onThird),
-    };
+    // Live situation details
+    const bases = { first:!!(sit.onFirst), second:!!(sit.onSecond), third:!!(sit.onThird) };
+    // Current pitcher and batter from situation
+    const activePitcher = sit.pitcher?.athlete || null;
+    const activeBatter  = sit.batter?.athlete  || null;
     return {
       sport:'mlb', id:ev.id, date:ev.date, state, stName, isDelayed, isSusp,
       innStr, period, isTopInning: sit.isTopInning,
-      outs: sit.outs,
-      balls: sit.balls, strikes: sit.strikes,
-      bases,
+      outs: sit.outs, balls: sit.balls, strikes: sit.strikes,
+      bases, activePitcher, activeBatter,
       away: teams.away||{}, home: teams.home||{},
     };
   });
@@ -839,25 +854,26 @@ function buildBaseDiamond(bases) {
 }
 
 function buildMLBCard(g) {
-  const {away,home,state,stName,innStr,period,isTopInning,outs,balls,strikes,bases,date,isDelayed,isSusp} = g;
+  const {away,home,state,stName,innStr,period,isTopInning,outs,balls,strikes,bases,
+         activePitcher,activeBatter,date,isDelayed,isSusp} = g;
   const isLive=state==='in', isPost=state==='post', isPre=state==='pre';
   const awW=isPost&&away.score>home.score, hwW=isPost&&home.score>away.score;
 
   let pillTxt='', pillCls='p-pre';
-  if (isDelayed)    { pillTxt='Delayed'; pillCls='p-special'; }
-  else if (isSusp)  { pillTxt='Suspended'; pillCls='p-special'; }
-  else if (isLive)  { pillTxt=innStr||'Live'; pillCls='p-live'; }
-  else if (isPost)  { pillTxt='Final'; pillCls='p-final'; }
-  else              { pillTxt='Upcoming'; }
+  if (isDelayed)   { pillTxt='Delayed';    pillCls='p-special'; }
+  else if (isSusp) { pillTxt='Suspended';  pillCls='p-special'; }
+  else if (isLive) { pillTxt=innStr||'Live'; pillCls='p-live'; }
+  else if (isPost) { pillTxt='Final';       pillCls='p-final'; }
+  else             { pillTxt='Upcoming'; }
 
   const pill = isLive
     ? `<span class="status-pill ${pillCls}"><span class="p-dot"></span>${pillTxt}</span>`
     : `<span class="status-pill ${pillCls}">${pillTxt}</span>`;
 
-  let meta = isPre ? `<span class="card-meta">${fmtTime(date)}</span>`
-    : isPost ? `<span class="card-meta">${fmtDate(date)}</span>` : '';
+  const meta = isPre  ? `<span class="card-meta">${fmtTime(date)}</span>`
+             : isPost ? `<span class="card-meta">${fmtDate(date)}</span>` : '';
 
-  let scoreArea = isPre
+  const scoreArea = isPre
     ? `<div class="vs-lbl">VS</div>`
     : `<div class="scores-row">
         <span class="score-num ${awW?'win':isPost?'dim':''}">${away.score??'–'}</span>
@@ -865,22 +881,23 @@ function buildMLBCard(g) {
         <span class="score-num ${hwW?'win':isPost?'dim':''}">${home.score??'–'}</span>
       </div>`;
 
-  // inning arrow indicator under score
-  let innArrow = '';
-  if (isLive && period) {
-    innArrow = `<span style="font-size:.65rem;color:var(--text-mute);margin-top:2px">${isTopInning?'▲':'▼'} ${period}${ordSuffix(period)}</span>`;
-  }
+  // Inning arrow under score during live
+  const innArrow = (isLive && period)
+    ? `<span class="inn-arrow">${isTopInning?'▲':'▼'} ${period}${ordSuffix(period)}</span>` : '';
 
-  // Chips footer
-  let chips = [];
+  // Footer chips
+  const chips = [];
   if (isLive) {
     if (outs != null) chips.push(`<span class="chip">${outs} Out${outs===1?'':'s'}</span>`);
-    if (balls != null && strikes != null) chips.push(`<span class="chip">${balls}-${strikes}</span>`);
-    if (bases.first || bases.second || bases.third) {
+    if (balls != null && strikes != null) chips.push(`<span class="chip">${balls}–${strikes}</span>`);
+    if (bases.first || bases.second || bases.third)
       chips.push(`<span class="chip hl" style="padding:4px 6px;">${buildBaseDiamond(bases)}</span>`);
-    }
+    // Live pitcher and batter
+    if (activePitcher?.shortName)
+      chips.push(`<span class="chip blue">🤾 ${activePitcher.shortName}</span>`);
+    if (activeBatter?.shortName)
+      chips.push(`<span class="chip green">🏏 ${activeBatter.shortName}</span>`);
   }
-  // Pitching starter (upcoming games)
   if (isPre) {
     if (away.pitcher) chips.push(`<span class="chip blue">⚾ ${away.pitcher.athlete?.shortName||''}</span>`);
     if (home.pitcher) chips.push(`<span class="chip blue">⚾ ${home.pitcher.athlete?.shortName||''}</span>`);
@@ -888,7 +905,7 @@ function buildMLBCard(g) {
 
   const footer = chips.length ? `<div class="card-footer">${chips.join('')}</div>` : '';
 
-  // Linescore (live or final)
+  // Linescore
   let linescore = '';
   if ((isLive || isPost) && (away.linescores?.length || home.linescores?.length)) {
     const maxInn = Math.max(away.linescores.length, home.linescores.length);
@@ -931,19 +948,18 @@ function buildMLBCard(g) {
     <div class="card-top">${pill}${meta}</div>
     <div class="card-body">
       <div class="team-col">
-        <div class="logo-wrap">${logoImg(away.abbr,away.espnLogo)}</div>
+        <div class="logo-wrap">${logoImg(away.abbr,away.espnLogo,'mlb')}</div>
         <span class="team-abbr">${away.abbr||'–'}</span>
         <span class="team-record">${away.record||''}</span>
       </div>
       <div class="score-center">${scoreArea}${innArrow}</div>
       <div class="team-col">
-        <div class="logo-wrap">${logoImg(home.abbr,home.espnLogo)}</div>
+        <div class="logo-wrap">${logoImg(home.abbr,home.espnLogo,'mlb')}</div>
         <span class="team-abbr">${home.abbr||'–'}</span>
         <span class="team-record">${home.record||''}</span>
       </div>
     </div>
-    ${footer}
-    ${linescore}
+    ${footer}${linescore}
   </div>`;
 }
 
@@ -1044,13 +1060,13 @@ function buildNHLCard(g) {
     <div class="card-top">${pill}${meta}</div>
     <div class="card-body">
       <div class="team-col">
-        <div class="logo-wrap">${logoImg(away.abbr,away.espnLogo)}</div>
+        <div class="logo-wrap">${logoImg(away.abbr,away.espnLogo,'nhl')}</div>
         <span class="team-abbr">${away.abbr||'–'}</span>
         <span class="team-record">${away.record||''}</span>
       </div>
       <div class="score-center">${scoreArea}</div>
       <div class="team-col">
-        <div class="logo-wrap">${logoImg(home.abbr,home.espnLogo)}</div>
+        <div class="logo-wrap">${logoImg(home.abbr,home.espnLogo,'nhl')}</div>
         <span class="team-abbr">${home.abbr||'–'}</span>
         <span class="team-record">${home.record||''}</span>
       </div>
