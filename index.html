@@ -68,21 +68,29 @@ flex-direction: column;
 @keyframes shimmer { 0%,100%{opacity:1;} 50%{opacity:.4;} }
 
 /* ═══════════════════════════════════════════════════
-HEADER  — fixed chrome, never scrolls
+TOP CHROME — single bar: title + tabs + refresh
+Hardcoded top padding large enough for any iPhone
+(Dynamic Island ≈ 59px, regular notch ≈ 44px)
 ═══════════════════════════════════════════════════ */
-.header {
-flex-shrink: 0;               /* never shrinks in the flex column */
-/* Top padding absorbs Dynamic Island / notch via safe-area */
-padding-top:    calc(var(–safe-t) + 12px);
-padding-bottom: 12px;
-padding-left:   calc(var(–safe-l) + 18px);
-padding-right:  calc(var(–safe-r) + 18px);
+.top-chrome {
+flex-shrink: 0;
 background: var(–bg);
 border-bottom: 1px solid var(–border);
+/* 60px hardcoded top padding clears Dynamic Island on every iPhone.
+safe-area is added on top as a bonus where it works. */
+padding-top: max(60px, calc(env(safe-area-inset-top) + 12px));
+padding-left:  calc(env(safe-area-inset-left,  0px) + 14px);
+padding-right: calc(env(safe-area-inset-right, 0px) + 14px);
+padding-bottom: 8px;
+z-index: 10;
+}
+
+/* Title row */
+.chrome-title {
 display: flex;
 align-items: center;
-gap: 12px;
-z-index: 10;
+gap: 10px;
+margin-bottom: 10px;
 }
 
 .header-wordmark {
@@ -135,20 +143,13 @@ flex-shrink: 0;
 .refresh-btn svg { width: 15px; height: 15px; }
 .refresh-btn.spin svg { animation: spin .7s linear infinite; }
 
-/* ═══════════════════════════════════════════════════
-STATUS TABS — fixed chrome, never scrolls
-═══════════════════════════════════════════════════ */
+/* Tabs row — sits inside top-chrome, no extra wrapper needed */
 .status-bar {
-flex-shrink: 0;
 display: flex;
 gap: 6px;
-padding: 10px 14px 8px;
-background: var(–bg);
-border-bottom: 1px solid var(–border);
 overflow-x: auto;
 -webkit-overflow-scrolling: touch;
 scrollbar-width: none;
-z-index: 9;
 }
 .status-bar::-webkit-scrollbar { display: none; }
 
@@ -291,54 +292,45 @@ gap: 0;
 /* ── DESKTOP (≥ 768px) ──────────────────────────── */
 @media (min-width: 768px) {
 
-/* Reset the mobile flex shell */
-html, body {
-height: auto;
-overflow: auto;
-}
+/* Reset mobile flex shell to normal document flow */
+html, body { height: auto; overflow: auto; }
+body { display: block; padding-bottom: 32px; }
 
-body {
-display: block;
-padding-bottom: 32px;
-}
-
-/* Desktop layout: sidebar + main column */
-.app-shell {
-display: grid;
-grid-template-columns: var(–sidebar-w) 1fr;
-grid-template-rows: auto 1fr;
-min-height: 100dvh;
-}
-
-.header {
-grid-column: 1 / -1;
-grid-row: 1;
+/* Desktop grid layout */
+body > .top-chrome {
 padding-top: 14px;
-padding-bottom: 14px;
+padding-bottom: 10px;
 padding-left: 28px;
 padding-right: 28px;
 position: sticky;
 top: 0;
 z-index: 60;
+display: grid;
+grid-template-columns: var(–sidebar-w) 1fr;
+gap: 0;
 }
 
-/* Scroll region: just normal block flow on desktop */
+/* On desktop, title row spans full width above the tab row */
+.chrome-title {
+grid-column: 1 / -1;
+margin-bottom: 0;
+padding-bottom: 10px;
+}
+
+/* Status bar sits in column 2 of the chrome grid */
+.status-bar {
+grid-column: 2;
+padding: 0;
+}
+
+/* Scroll region: normal block, grid for sidebar + content */
 .scroll-region {
 overflow: visible;
 padding-bottom: 0;
 flex: none;
-grid-column: 1 / -1;
-grid-row: 2;
 display: grid;
 grid-template-columns: var(–sidebar-w) 1fr;
-}
-
-/* Status bar sits inside scroll-region on desktop, non-sticky */
-.status-bar {
-position: relative;
-grid-column: 2;
-border-bottom: none;
-padding-top: 16px;
+min-height: calc(100dvh - 120px);
 }
 
 /* Hide mobile bottom nav */
@@ -349,70 +341,52 @@ padding-top: 16px;
 display: flex;
 flex-direction: column;
 grid-column: 1;
-grid-row: 1 / -1;
 border-right: 1px solid var(–border);
 background: var(–surface);
 padding: 20px 0;
 position: sticky;
-top: 57px;
-height: calc(100dvh - 57px);
+top: 120px;
+height: calc(100dvh - 120px);
 overflow-y: auto;
 align-self: start;
 }
 
 .sidebar-btn {
-display: flex;
-align-items: center;
-gap: 12px;
-padding: 12px 20px;
-border: none;
-background: transparent;
-color: var(–text-mute);
-cursor: pointer;
-font-family: ‘Oswald’, sans-serif;
-font-size: 0.9rem;
-font-weight: 600;
-letter-spacing: 0.06em;
-text-transform: uppercase;
-width: 100%;
-text-align: left;
-transition: background .15s, color .15s;
-position: relative;
+display: flex; align-items: center; gap: 12px;
+padding: 12px 20px; border: none; background: transparent;
+color: var(–text-mute); cursor: pointer;
+font-family: ‘Oswald’, sans-serif; font-size: 0.9rem;
+font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
+width: 100%; text-align: left;
+transition: background .15s, color .15s; position: relative;
 }
 .sidebar-btn:hover  { background: rgba(255,255,255,.04); color: var(–text-dim); }
 .sidebar-btn.active { background: rgba(255,255,255,.07); color: var(–text); }
 .sidebar-btn::before {
-content: ‘’;
-position: absolute;
+content: ‘’; position: absolute;
 left: 0; top: 20%; bottom: 20%;
-width: 3px;
-border-radius: 0 3px 3px 0;
-background: var(–text);
-transform: scaleY(0);
-transition: transform .2s;
+width: 3px; border-radius: 0 3px 3px 0;
+background: var(–text); transform: scaleY(0); transition: transform .2s;
 }
 .sidebar-btn.active::before { transform: scaleY(1); }
 .sidebar-icon { font-size: 1.3rem; flex-shrink: 0; }
 .sidebar-live-dot {
 width: 7px; height: 7px; border-radius: 50%;
-background: var(–live-red);
-margin-left: auto;
-display: none;
-animation: blink 1.6s ease-in-out infinite;
+background: var(–live-red); margin-left: auto;
+display: none; animation: blink 1.6s ease-in-out infinite;
 }
 .sidebar-live-dot.show { display: block; }
 
-/* Sport views fill main column inside scroll-region */
+/* Sport views in column 2 */
 .sport-view { grid-column: 2; display: none; }
 .sport-view.active { display: block; }
 
 .status-section { padding: 10px 24px 0; }
 
-/* 2-column card grid on desktop */
+/* 2-column card grid */
 .cards-grid {
 grid-template-columns: repeat(2, 1fr);
-gap: 10px;
-padding-bottom: 10px;
+gap: 10px; padding-bottom: 10px;
 }
 .cards-grid .game-card { margin-bottom: 0; }
 }
@@ -575,28 +549,25 @@ padding:10px 16px 0; letter-spacing:.02em;
 </head>
 <body>
 
-<!-- ── Header ───────────────────────────────────── -->
+<!-- ── Top chrome: title + tabs, clears Dynamic Island ── -->
 
-<header class="header">
-  <button class="refresh-btn" id="refreshBtn" aria-label="Refresh">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-      <polyline points="23 4 23 10 17 10"/>
-      <polyline points="1 20 1 14 7 14"/>
-      <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
-    </svg>
-  </button>
-  <span class="header-wordmark">Scores</span>
-  <div class="live-pill" id="livePill"><span class="live-pill-dot"></span>Live</div>
-</header>
-
-<!-- ── Status tabs (Live / Upcoming / Final) ─────── -->
-
-<!-- One shared bar; JS swaps counts per active sport -->
-
-<div class="status-bar" id="statusBar">
-  <button class="status-btn live-status active" data-status="live">Live     <span class="scnt" id="cntLive">–</span></button>
-  <button class="status-btn"                    data-status="pre"> Upcoming <span class="scnt" id="cntPre">–</span></button>
-  <button class="status-btn"                    data-status="post">Final    <span class="scnt" id="cntPost">–</span></button>
+<div class="top-chrome">
+  <div class="chrome-title">
+    <button class="refresh-btn" id="refreshBtn" aria-label="Refresh">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="23 4 23 10 17 10"/>
+        <polyline points="1 20 1 14 7 14"/>
+        <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
+      </svg>
+    </button>
+    <span class="header-wordmark">Scores</span>
+    <div class="live-pill" id="livePill"><span class="live-pill-dot"></span>Live</div>
+  </div>
+  <div class="status-bar" id="statusBar">
+    <button class="status-btn live-status active" data-status="live">Live     <span class="scnt" id="cntLive">–</span></button>
+    <button class="status-btn"                    data-status="pre"> Upcoming <span class="scnt" id="cntPre">–</span></button>
+    <button class="status-btn"                    data-status="post">Final    <span class="scnt" id="cntPost">–</span></button>
+  </div>
 </div>
 
 <!-- ── Scrollable content region ─────────────────── -->
