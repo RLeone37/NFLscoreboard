@@ -73,15 +73,19 @@ HEADER
 position: sticky;
 top: 0;
 z-index: 60;
-/* Extra top padding to fully clear Dynamic Island (~59px inset + 8px breathing room) */
-padding-top:    calc(var(–safe-t) + 10px);
+/* Push content well below Dynamic Island.
+On Dynamic Island devices safe-area-inset-top ≈ 59px.
+We add 20px on top of that so content sits at ~79px from top edge. */
+padding-top:    calc(var(–safe-t) + 20px);
 padding-bottom: 14px;
 padding-left:   calc(var(–safe-l) + 20px);
 padding-right:  calc(var(–safe-r) + 20px);
+/* Minimum height ensures content never floats up on notch devices */
+min-height: calc(var(–safe-t) + 72px);
 background: #07090e;
 border-bottom: 1px solid var(–border);
 display: flex;
-align-items: center;
+align-items: flex-end; /* anchor content to bottom of the header block */
 gap: 12px;
 }
 
@@ -310,8 +314,8 @@ border-right: 1px solid var(–border);
 background: var(–surface);
 padding: 20px 0;
 position: sticky;
-top: 57px;
-height: calc(100dvh - 57px);
+top: calc(var(–safe-t) + 72px);
+height: calc(100dvh - var(–safe-t) - 72px);
 overflow-y: auto;
 }
 
